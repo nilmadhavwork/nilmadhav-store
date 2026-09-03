@@ -3,6 +3,9 @@ const cors = require('cors');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 
+const authRoutes = require('./routes/auth.routes');
+const { notFound, errorHandler } = require('./middleware/error.middleware');
+
 const app = express();
 
 // Middleware
@@ -16,5 +19,10 @@ app.use(morgan('dev'));
 app.get('/', (req, res) => {
   res.json({ message: 'Textile e-commerce API is running' });
 });
+
+app.use('/api/auth', authRoutes);
+
+app.use(notFound);
+app.use(errorHandler);
 
 module.exports = app;
