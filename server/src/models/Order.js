@@ -72,11 +72,10 @@ const orderSchema = new mongoose.Schema(
 );
 
 // Auto-generate a human-readable order number before first save
-orderSchema.pre('validate', function (next) {
+orderSchema.pre('validate', function () {
   if (!this.orderNumber) {
     this.orderNumber = 'ORD' + Date.now() + Math.floor(Math.random() * 1000);
   }
-  next();
 });
 
 orderSchema.index({ userId: 1 });
