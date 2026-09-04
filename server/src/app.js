@@ -11,6 +11,7 @@ const wishlistRoutes = require('./routes/wishlist.routes');
 const orderRoutes = require('./routes/order.routes');
 const addressRoutes = require('./routes/address.routes');
 const settingRoutes = require('./routes/setting.routes');
+const paymentRoutes = require('./routes/payment.routes');
 const { notFound, errorHandler } = require('./middleware/error.middleware');
 
 const app = express();
@@ -35,6 +36,7 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/settings', settingRoutes);
+app.use('/api/payments', paymentRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
