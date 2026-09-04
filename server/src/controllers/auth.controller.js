@@ -10,6 +10,33 @@ const registerUser = async (req, res, next) => {
       return res.status(400).json({ message: 'Name, email, and password are required' });
     }
 
+    // Validate email domain after @
+    const allowedEmailDomains = [
+      'gmail.com',
+      'yahoo.com',
+      'yahoo.co.in',
+      'yahoo.co.uk',
+      'ymail.com',
+      'outlook.com',
+      'hotmail.com',
+      'live.com',
+      'msn.com',
+      'icloud.com',
+      'rediffmail.com',
+      'zoho.com',
+      'proton.me',
+      'protonmail.com',
+      'aol.com',
+    ];
+
+    const emailParts = email.toLowerCase().trim().split('@');
+    const domain = emailParts[1];
+    if (!domain || !allowedEmailDomains.includes(domain)) {
+      return res.status(400).json({
+        message: 'Please register with a valid email provider (Gmail, Yahoo, Outlook, iCloud, etc.)',
+      });
+    }
+
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });

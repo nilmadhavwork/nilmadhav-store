@@ -21,8 +21,12 @@ const createReturn = async (req, res, next) => {
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ message: "Order not found" });
 
-    const isOwner = order.userId.toString() === req.user._id.toString();
-    if (!isOwner) return res.status(403).json({ message: "Not authorized" });
+    const orderUserId = order.userId?._id ? order.userId._id.toString() : order.userId.toString();
+    const isOwner = orderUserId === req.user._id.toString();
+    const isAdmin = req.user.role === "ADMIN";
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: "Not authorized to return this order" });
+    }
 
     if (order.orderStatus !== "DELIVERED") {
       return res
@@ -88,7 +92,7 @@ const createReturn = async (req, res, next) => {
 
     const returnRequest = await Return.create({
       orderId,
-      userId: req.user._id,
+      userId: order.userId?._id || order.userId,
       items: parsedItems,
       reason,
       description,

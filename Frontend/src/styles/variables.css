@@ -1,0 +1,83 @@
+:root {
+  /* ========================================================
+     BRAND COLOR PALETTE: LUXURY INDIAN SAREE ATELIER
+     ======================================================== */
+  /* Primary: Royal Deep Burgundy / Wine */
+  --color-primary: #5B1527;
+  --color-primary-hover: #470F1E;
+  --color-primary-dark: #320A14;
+  --color-primary-light: #7E2239;
+  --color-primary-subtle: #F8EDF0;
+
+  /* Secondary: Warm Regal Muted Gold */
+  --color-gold: #C5A059;
+  --color-gold-hover: #B58F45;
+  --color-gold-light: #E0C78E;
+  --color-gold-dark: #9E792E;
+  --color-gold-bg: #FAF5EB;
+  --color-gold-border: #E8D8B8;
+
+  /* Neutrals: Rich Off-White & Ivory */
+  --color-bg: #FDFBF7;
+  --color-bg-alt: #F7F3EC;
+  --color-bg-surface: #FFFFFF;
+  --color-card: #FFFFFF;
+
+  /* Typography Colors */
+  --color-text: #1C1917;
+  --color-text-secondary: #44403C;
+  --color-text-muted: #78716C;
+  --color-text-light: #A8A29E;
+  --color-text-inverse: #FFFFFF;
+
+  /* Borders & Dividers */
+  --color-border: #EAE3D8;
+  --color-border-subtle: #F2EDE4;
+  --color-border-focus: #C5A059;
+
+  /* Semantic Feedback Colors */
+  --color-success: #15803D;
+  --color-success-bg: #F0FDF4;
+  --color-success-border: #BBF7D0;
+
+  --color-warning: #B45309;
+  --color-warning-bg: #FFFBEB;
+  --color-warning-border: #FDE68A;
+
+  --color-danger: #B91C1C;
+  --color-danger-bg: #FEF2F2;
+  --color-danger-border: #FECACA;
+
+  --color-info: #1D4ED8;
+  --color-info-bg: #EFF6FF;
+  --color-info-border: #BFDBFE;
+
+  /* Typography */
+  --font-serif: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Elevation & Shadows */
+  --shadow-xs: 0 1px 2px rgba(50, 10, 20, 0.04);
+  --shadow-sm: 0 2px 8px rgba(50, 10, 20, 0.06);
+  --shadow-md: 0 6px 18px rgba(50, 10, 20, 0.08);
+  --shadow-lg: 0 12px 32px rgba(50, 10, 20, 0.12);
+  --shadow-xl: 0 20px 48px rgba(50, 10, 20, 0.16);
+
+  /* Radius */
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout */
+  --header-height: 80px;
+  --header-height-mobile: 66px;
+  --max-width: 1320px;
+}
