@@ -32,11 +32,10 @@ const returnSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-returnSchema.pre('validate', function (next) {
+returnSchema.pre('validate', function () {
   if (!this.returnNumber) {
     this.returnNumber = 'RET' + Date.now() + Math.floor(Math.random() * 1000);
   }
-  next();
 });
 
 module.exports = mongoose.model('Return', returnSchema);

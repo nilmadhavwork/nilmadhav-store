@@ -12,6 +12,8 @@ const orderRoutes = require('./routes/order.routes');
 const addressRoutes = require('./routes/address.routes');
 const settingRoutes = require('./routes/setting.routes');
 const paymentRoutes = require('./routes/payment.routes');
+const returnRoutes = require('./routes/return.routes');
+const refundRoutes = require('./routes/refund.routes');
 const { notFound, errorHandler } = require('./middleware/error.middleware');
 
 const app = express();
@@ -37,6 +39,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/returns', returnRoutes);
+app.use('/api/refunds', refundRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
