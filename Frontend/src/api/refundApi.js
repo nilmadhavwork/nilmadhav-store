@@ -26,5 +26,12 @@ export const refundApi = {
     const res = await apiClient.put(`/refunds/${id}/complete`, { method });
     return res.data;
   },
+
+  // PUT /api/refunds/:id/initiate — admin manually triggers a scheduled refund
+  initiateScheduledRefund: async (id) => {
+    const res = await apiClient.put(`/refunds/${id}/initiate`);
+    return res.data;
+  },
 };
+
 

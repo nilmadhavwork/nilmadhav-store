@@ -163,4 +163,43 @@ const getAllRefunds = async (req, res, next) => {
   }
 };
 
-module.exports = { createRefund, completeRefund, getMyRefunds, getAllRefunds };
+
+// @route PUT /api/refunds/:id/initiate — admin manually triggers a scheduled refund
+// Blocked until refund.scheduledAt has passed
+const initiateScheduledRefund = async (req, res, next) => {
+  try {
+    const refund = await Refund.findById(req.params.id);
+    if (!refund) return res.status(404).json({ message: 'Refund not found' });
+
+    if (refund.status !== 'PENDING') {
+      return res.status(400).json({ message: `Refund already ${refund.status.toLowerCase()}, cannot initiate again` });
+    }
+
+    // if (refund.scheduledAt && new Date() < new Date(refund.scheduledAt)) {
+    //   const daysLeft = Math.ceil((new Date(refund.scheduledAt) - new Date()) / (1000 * 60 * 60 * 24));
+    //   return res.status(400).json({
+    //     message: `Refund cannot be initiated yet. ${daysLeft} day(s) remaining until the scheduled date (${refund.scheduledAt.toDateString()}).`,
+    //   });
+    // }
+
+    if (refund.method === 'RAZORPAY') {
+      const payment = await Payment.findById(refund.paymentId);
+      const razorpayRefund = await razorpayInstance.payments.refund(payment.razorpayPaymentId, {
+        amount: Math.round(refund.amount * 100),
+      });
+      refund.razorpayRefundId = razorpayRefund.id;
+      refund.status = 'PROCESSING';
+    } else {
+      // COD — mark as processing; admin completes it manually via bank/UPI transfer,
+      // then calls the existing PUT /api/refunds/:id/complete endpoint
+      refund.status = 'PROCESSING';
+    }
+
+    await refund.save();
+    res.json({ message: 'Refund initiated', refund });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { createRefund, completeRefund, getMyRefunds, getAllRefunds,  initiateScheduledRefund };

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const settingSchema = new mongoose.Schema(
   {
@@ -29,17 +29,21 @@ const settingSchema = new mongoose.Schema(
     paymentSettings: {
       razorpayEnabled: { type: Boolean, default: true },
     },
+
+    refundSettings: {
+      refundProcessingDays: { type: Number, default: 7 },
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Enforces a single settings document — always fetch/update the same one
 settingSchema.statics.getSettings = async function () {
   let settings = await this.findOne();
   if (!settings) {
-    settings = await this.create({ storeName: 'My Saree Store' });
+    settings = await this.create({ storeName: "My Saree Store" });
   }
   return settings;
 };
 
-module.exports = mongoose.model('Setting', settingSchema);
+module.exports = mongoose.model("Setting", settingSchema);

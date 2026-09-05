@@ -21,6 +21,7 @@ export const AdminRefundsPage = () => {
   const [loadingReturns, setLoadingReturns] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [completingId, setCompletingId] = useState(null);
+  const [initiatingId, setInitiatingId] = useState(null);
 
   const loadRefunds = async () => {
     try {
@@ -75,6 +76,19 @@ export const AdminRefundsPage = () => {
       toastError(err.response?.data?.message || 'Failed to process refund. Ensure the order was confirmed as paid.');
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleInitiateRefund = async (refund) => {
+    try {
+      setInitiatingId(refund._id);
+      const res = await refundApi.initiateScheduledRefund(refund._id);
+      success(res?.message || `Refund initiated successfully for #${refund.refundNumber || refund._id}!`);
+      loadRefunds();
+    } catch (err) {
+      toastError(err.response?.data?.message || 'Failed to initiate refund.');
+    } finally {
+      setInitiatingId(null);
     }
   };
 
@@ -137,7 +151,7 @@ export const AdminRefundsPage = () => {
                 <th>Reimbursement Amount</th>
                 <th>Mode</th>
                 <th>Reason</th>
-                <th>Disbursed Date</th>
+                <th>Scheduled / Disbursed Date</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -146,6 +160,7 @@ export const AdminRefundsPage = () => {
               {refunds.map((ref) => {
                 const orderNum = ref.orderId?.orderNumber || (typeof ref.orderId === 'string' ? ref.orderId : 'N/A');
                 const customerName = ref.userId?.name || ref.userId?.email || 'Customer';
+                const isScheduledFuture = ref.scheduledAt && new Date() < new Date(ref.scheduledAt);
 
                 return (
                   <tr key={ref._id}>
@@ -179,7 +194,14 @@ export const AdminRefundsPage = () => {
                     <td style={{ fontSize: '0.85rem', color: '#4B5563', maxWidth: '220px' }}>
                       {ref.reason}
                     </td>
-                    <td>{formatDate(ref.processedAt || ref.createdAt, true)}</td>
+                    <td>
+                      <div>{formatDate(ref.processedAt || ref.createdAt, true)}</div>
+                      {ref.scheduledAt && (
+                        <div style={{ fontSize: '0.75rem', color: isScheduledFuture ? '#b45309' : '#059669', fontWeight: 500, marginTop: '2px' }}>
+                          Scheduled: {formatDate(ref.scheduledAt, false)}
+                        </div>
+                      )}
+                    </td>
                     <td>
                       <span
                         className={`badge ${
@@ -195,19 +217,35 @@ export const AdminRefundsPage = () => {
                       </span>
                     </td>
                     <td>
-                      {ref.status === 'PENDING' && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleCompleteRefund(ref)}
-                          loading={completingId === ref._id}
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: '#059669', borderColor: '#059669' }}
-                          title="Mark manual transfer completed"
-                        >
-                          <Check size={12} />
-                          <span>Mark Paid</span>
-                        </Button>
-                      )}
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        {ref.status === 'PENDING' && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => handleInitiateRefund(ref)}
+                            loading={initiatingId === ref._id}
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: '#5B1527', borderColor: '#5B1527' }}
+                            title="Initiate refund processing"
+                          >
+                            <RefreshCw size={12} />
+                            <span>Initiate Refund</span>
+                          </Button>
+                        )}
+
+                        {(ref.status === 'PROCESSING' || (ref.status === 'PENDING' && ref.method === 'BANK_TRANSFER')) && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => handleCompleteRefund(ref)}
+                            loading={completingId === ref._id}
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: '#059669', borderColor: '#059669' }}
+                            title="Mark manual transfer completed"
+                          >
+                            <Check size={12} />
+                            <span>Mark Paid</span>
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

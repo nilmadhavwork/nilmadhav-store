@@ -1,8 +1,10 @@
-const Order = require('../models/Order');
-const Cart = require('../models/Cart');
-const Product = require('../models/Product');
-const Address = require('../models/Address');
-const Setting = require('../models/Setting');
+const Order = require("../models/Order");
+const Cart = require("../models/Cart");
+const Product = require("../models/Product");
+const Address = require("../models/Address");
+const Setting = require("../models/Setting");
+const Payment = require('../models/Payment');
+const Refund = require('../models/Refund');
 
 // @route POST /api/orders — place an order from the current cart
 const createOrder = async (req, res, next) => {
@@ -10,17 +12,22 @@ const createOrder = async (req, res, next) => {
     const { addressId, paymentMethod } = req.body;
 
     if (!addressId || !paymentMethod) {
-      return res.status(400).json({ message: 'addressId and paymentMethod are required' });
+      return res
+        .status(400)
+        .json({ message: "addressId and paymentMethod are required" });
     }
 
-    const address = await Address.findOne({ _id: addressId, userId: req.user._id });
+    const address = await Address.findOne({
+      _id: addressId,
+      userId: req.user._id,
+    });
     if (!address) {
-      return res.status(404).json({ message: 'Address not found' });
+      return res.status(404).json({ message: "Address not found" });
     }
 
     const cart = await Cart.findOne({ userId: req.user._id });
     if (!cart || cart.items.length === 0) {
-      return res.status(400).json({ message: 'Cart is empty' });
+      return res.status(400).json({ message: "Cart is empty" });
     }
 
     let subtotal = 0;
@@ -31,10 +38,16 @@ const createOrder = async (req, res, next) => {
       const product = await Product.findById(cartItem.productId);
 
       if (!product || !product.isActive) {
-        return res.status(400).json({ message: `Product no longer available: ${cartItem.productId}` });
+        return res
+          .status(400)
+          .json({
+            message: `Product no longer available: ${cartItem.productId}`,
+          });
       }
       if (product.stock < cartItem.quantity) {
-        return res.status(400).json({ message: `Insufficient stock for ${product.name}` });
+        return res
+          .status(400)
+          .json({ message: `Insufficient stock for ${product.name}` });
       }
 
       const currentPrice = product.discountPrice || product.price;
@@ -48,7 +61,7 @@ const createOrder = async (req, res, next) => {
         quantity: cartItem.quantity,
         price: currentPrice,
         total: lineTotal,
-        image: product.images[0]?.url || '',
+        image: product.images[0]?.url || "",
       });
 
       // Decrement stock
@@ -84,7 +97,7 @@ const createOrder = async (req, res, next) => {
       discount,
       totalAmount,
       paymentMethod, // 'RAZORPAY' or 'COD'
-      paymentStatus: paymentMethod === 'COD' ? 'PENDING' : 'PENDING', // updated after Razorpay verification
+      paymentStatus: paymentMethod === "COD" ? "PENDING" : "PENDING", // updated after Razorpay verification
     });
 
     // Clear the cart after successful order
@@ -100,7 +113,9 @@ const createOrder = async (req, res, next) => {
 // @route GET /api/orders/my — logged-in customer's own orders
 const getMyOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const orders = await Order.find({ userId: req.user._id }).sort({
+      createdAt: -1,
+    });
     res.json(orders);
   } catch (error) {
     next(error);
@@ -110,13 +125,18 @@ const getMyOrders = async (req, res, next) => {
 // @route GET /api/orders/:id — single order (owner or admin only)
 const getOrderById = async (req, res, next) => {
   try {
-    const order = await Order.findById(req.params.id).populate('userId', 'name email phone');
-    if (!order) return res.status(404).json({ message: 'Order not found' });
+    const order = await Order.findById(req.params.id).populate(
+      "userId",
+      "name email phone",
+    );
+    if (!order) return res.status(404).json({ message: "Order not found" });
 
     const isOwner = order.userId._id.toString() === req.user._id.toString();
-    const isAdmin = req.user.role === 'ADMIN';
+    const isAdmin = req.user.role === "ADMIN";
     if (!isOwner && !isAdmin) {
-      return res.status(403).json({ message: 'Not authorized to view this order' });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to view this order" });
     }
 
     res.json(order);
@@ -135,14 +155,19 @@ const getAllOrders = async (req, res, next) => {
     if (paymentStatus) filter.paymentStatus = paymentStatus;
 
     const orders = await Order.find(filter)
-      .populate('userId', 'name email phone')
+      .populate("userId", "name email phone")
       .skip((page - 1) * limit)
       .limit(Number(limit))
       .sort({ createdAt: -1 });
 
     const total = await Order.countDocuments(filter);
 
-    res.json({ orders, page: Number(page), totalPages: Math.ceil(total / limit), totalResults: total });
+    res.json({
+      orders,
+      page: Number(page),
+      totalPages: Math.ceil(total / limit),
+      totalResults: total,
+    });
   } catch (error) {
     next(error);
   }
@@ -152,14 +177,27 @@ const getAllOrders = async (req, res, next) => {
 const updateOrderStatus = async (req, res, next) => {
   try {
     const { orderStatus } = req.body;
-    const validStatuses = ['PENDING', 'CONFIRMED', 'PACKED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'RTO'];
+    const validStatuses = [
+      "PENDING",
+      "CONFIRMED",
+      "PACKED",
+      "SHIPPED",
+      "OUT_FOR_DELIVERY",
+      "DELIVERED",
+      "CANCELLED",
+      "RTO",
+    ];
 
     if (!validStatuses.includes(orderStatus)) {
-      return res.status(400).json({ message: 'Invalid orderStatus value' });
+      return res.status(400).json({ message: "Invalid orderStatus value" });
     }
 
-    const order = await Order.findByIdAndUpdate(req.params.id, { orderStatus }, { new: true });
-    if (!order) return res.status(404).json({ message: 'Order not found' });
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { orderStatus },
+      { new: true },
+    );
+    if (!order) return res.status(404).json({ message: "Order not found" });
 
     res.json(order);
   } catch (error) {
@@ -173,7 +211,7 @@ const updateShippingInfo = async (req, res, next) => {
     const { shipmentId, awbCode, courierName, trackingUrl, status } = req.body;
 
     const order = await Order.findById(req.params.id);
-    if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (!order) return res.status(404).json({ message: "Order not found" });
 
     if (shipmentId) order.shipping.shipmentId = shipmentId;
     if (awbCode) order.shipping.awbCode = awbCode;
@@ -182,9 +220,9 @@ const updateShippingInfo = async (req, res, next) => {
     if (status) order.shipping.status = status;
 
     // Keep orderStatus roughly in sync with shipping status
-    if (status === 'PICKED_UP') order.orderStatus = 'SHIPPED';
-    if (status === 'OUT_FOR_DELIVERY') order.orderStatus = 'OUT_FOR_DELIVERY';
-    if (status === 'DELIVERED') order.orderStatus = 'DELIVERED';
+    if (status === "PICKED_UP") order.orderStatus = "SHIPPED";
+    if (status === "OUT_FOR_DELIVERY") order.orderStatus = "OUT_FOR_DELIVERY";
+    if (status === "DELIVERED") order.orderStatus = "DELIVERED";
 
     await order.save();
     res.json(order);
@@ -198,26 +236,63 @@ const cancelOrder = async (req, res, next) => {
   try {
     const { cancellationReason } = req.body;
     const order = await Order.findById(req.params.id);
-    if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (!order) return res.status(404).json({ message: "Order not found" });
 
     const isOwner = order.userId.toString() === req.user._id.toString();
-    const isAdmin = req.user.role === 'ADMIN';
+    const isAdmin = req.user.role === "ADMIN";
     if (!isOwner && !isAdmin) {
-      return res.status(403).json({ message: 'Not authorized to cancel this order' });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to cancel this order" });
     }
 
-    if (['SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(order.orderStatus)) {
-      return res.status(400).json({ message: 'Order already shipped, cannot cancel — request a return instead' });
+    if (
+      ["SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"].includes(order.orderStatus)
+    ) {
+      return res
+        .status(400)
+        .json({
+          message:
+            "Order already shipped, cannot cancel — request a return instead",
+        });
     }
 
     // Restore stock for cancelled items
     for (const item of order.items) {
-      await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } });
+      await Product.findByIdAndUpdate(item.productId, {
+        $inc: { stock: item.quantity },
+      });
     }
 
-    order.orderStatus = 'CANCELLED';
+    order.orderStatus = "CANCELLED";
     order.cancelledAt = new Date();
-    order.cancellationReason = cancellationReason || 'No reason provided';
+    order.cancellationReason = cancellationReason || "No reason provided";
+
+    if (order.paymentStatus === "PAID") {
+      const payment = await Payment.findOne({ orderId: order._id });
+
+      if (payment && payment.status === "SUCCESS") {
+        const settings = await Setting.getSettings();
+        const refundDays = settings.refundSettings.refundProcessingDays;
+        const scheduledAt = new Date(
+          Date.now() + refundDays * 24 * 60 * 60 * 1000,
+        );
+
+        await Refund.create({
+          orderId: order._id,
+          paymentId: payment._id,
+          returnId: null,
+          userId: order.userId,
+          amount: order.totalAmount,
+          method:
+            payment.provider === "RAZORPAY" ? "RAZORPAY" : "BANK_TRANSFER",
+          status: "PENDING", // sits here — admin must manually trigger it, and only after scheduledAt
+          scheduledAt,
+          reason: `Order cancelled: ${order.cancellationReason}`,
+        });
+      }
+    }
+
     await order.save();
 
     res.json(order);

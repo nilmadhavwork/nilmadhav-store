@@ -273,6 +273,20 @@ export const OrderDetailPage = () => {
           </div>
         </div>
 
+        {/* Cancelled Order Refund Notice Banner */}
+        {orderStatus === 'CANCELLED' && (
+          <div style={{ backgroundColor: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 'var(--radius-md)', padding: '1rem 1.25rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#92400E' }}>
+            <XCircle size={20} style={{ flexShrink: 0 }} />
+            <div>
+              <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>This order was cancelled</div>
+              <div style={{ fontSize: '0.85rem', color: '#B45309', marginTop: '0.15rem' }}>
+                {order.cancellationReason ? `Reason: "${order.cancellationReason}"` : ''}
+                {paymentStatus === 'PAID' ? ' • Reimbursement request logged and will be processed per store policy.' : ''}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Shiprocket Fulfillment Visual Timeline */}
         <div style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '1.75rem', marginBottom: '2rem', boxShadow: 'var(--shadow-xs)' }}>
           <h3 style={{ fontSize: '1.2rem', color: 'var(--color-primary-dark)', marginBottom: '0.5rem' }}>
