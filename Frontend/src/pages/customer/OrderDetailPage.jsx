@@ -8,10 +8,13 @@ import {
   RotateCcw,
   XCircle,
   FileText,
+  RefreshCw,
 } from 'lucide-react';
 import { orderApi } from '../../api/orderApi';
+import { paymentApi } from '../../api/paymentApi';
 import { returnApi } from '../../api/returnApi';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import OrderTimeline from '../../components/order/OrderTimeline';
 import CancelOrderModal from '../../components/order/CancelOrderModal';
 import ReturnOrderModal from '../../components/order/ReturnOrderModal';
@@ -23,6 +26,7 @@ export const OrderDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { success, error } = useToast();
+  const { user } = useAuth();
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,6 +34,7 @@ export const OrderDetailPage = () => {
   const [cancelling, setCancelling] = useState(false);
   const [returnModalOpen, setReturnModalOpen] = useState(false);
   const [submittingReturn, setSubmittingReturn] = useState(false);
+  const [retryingPayment, setRetryingPayment] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -79,6 +84,72 @@ export const OrderDetailPage = () => {
     }
   };
 
+  // Handle Retry Online Payment
+  const handleRetryPayment = async () => {
+    if (!window.Razorpay) {
+      error('Razorpay payment gateway could not be loaded. Please refresh or check your internet connection.');
+      return;
+    }
+
+    try {
+      setRetryingPayment(true);
+
+      // Create/Retrieve Razorpay order from backend
+      const razorpayOrder = await paymentApi.createRazorpayOrder(order._id);
+
+      const options = {
+        key: razorpayOrder.keyId || 'rzp_test_placeholder_key',
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency || 'INR',
+        name: 'Nilmadhav Sarees',
+        description: `Retry Payment for Order #${order.orderNumber}`,
+        order_id: razorpayOrder.razorpayOrderId,
+        prefill: {
+          name: user?.name || shippingAddress.fullName || '',
+          email: user?.email || '',
+          contact: shippingAddress.phone || user?.phone || '',
+        },
+        theme: {
+          color: '#5B1527',
+        },
+        handler: async (response) => {
+          try {
+            await paymentApi.verifyRazorpayPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              orderId: order._id,
+            });
+            const updatedOrder = await orderApi.getOrderById(order._id);
+            setOrder(updatedOrder);
+            success(`Payment completed successfully! Order #${order.orderNumber} is now confirmed.`);
+          } catch (verifyErr) {
+            const msg = verifyErr.response?.data?.message || 'Payment verification failed.';
+            error(msg);
+          } finally {
+            setRetryingPayment(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setRetryingPayment(false);
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response) {
+        error(response.error?.description || 'Payment failed. Please try again.');
+        setRetryingPayment(false);
+      });
+      rzp.open();
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to initiate retry payment. Please try again.';
+      error(msg);
+      setRetryingPayment(false);
+    }
+  };
+
   if (loading) {
     return <Spinner center size="lg" />;
   }
@@ -112,6 +183,8 @@ export const OrderDetailPage = () => {
   const canCancel = ['PENDING', 'CONFIRMED', 'PACKED'].includes(orderStatus);
   // Return is permitted once delivered
   const canReturn = orderStatus === 'DELIVERED';
+  // Retry Payment is allowed when payment is PENDING or FAILED, order is not CANCELLED, and payment method is not COD
+  const canRetryPayment = (paymentStatus === 'PENDING' || paymentStatus === 'FAILED') && orderStatus !== 'CANCELLED' && paymentMethod !== 'COD';
 
   return (
     <div className="section">
@@ -150,10 +223,10 @@ export const OrderDetailPage = () => {
                   Order #{orderNumber}
                 </h1>
                 <span className={`badge ${getOrderStatusBadge(orderStatus)}`}>
-                  {orderStatus}
+                  {`Order : ${orderStatus}`}
                 </span>
                 <span className={`badge ${getPaymentStatusBadge(paymentStatus)}`}>
-                  {paymentStatus}
+                  {`Payment : ${paymentStatus} (${paymentMethod})`}
                 </span>
               </div>
               <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
@@ -161,7 +234,19 @@ export const OrderDetailPage = () => {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              {canRetryPayment && (
+                <Button
+                  variant="gold"
+                  size="sm"
+                  onClick={handleRetryPayment}
+                  loading={retryingPayment}
+                >
+                  <RefreshCw size={15} />
+                  <span>Retry Payment</span>
+                </Button>
+              )}
+
               {canCancel && (
                 <Button
                   variant="outline"
@@ -242,6 +327,24 @@ export const OrderDetailPage = () => {
               <span>Total Paid / Payable</span>
               <span>{formatCurrency(totalAmount)}</span>
             </div>
+
+            {canRetryPayment && (
+              <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border-subtle)' }}>
+                <div style={{ fontSize: '0.8rem', color: '#b45309', backgroundColor: '#fef3c7', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '0.75rem', fontWeight: 500 }}>
+                  ⚠️ Payment is pending. Click below to complete online payment.
+                </div>
+                <Button
+                  variant="gold"
+                  block
+                  size="sm"
+                  onClick={handleRetryPayment}
+                  loading={retryingPayment}
+                >
+                  <RefreshCw size={15} />
+                  <span>Retry Payment Now</span>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
