@@ -100,9 +100,12 @@ const createOrder = async (req, res, next) => {
       paymentStatus: paymentMethod === "COD" ? "PENDING" : "PENDING", // updated after Razorpay verification
     });
 
-    // Clear the cart after successful order
-    cart.items = [];
-    await cart.save();
+    // For COD orders, the order is confirmed immediately — clear the cart now.
+    // For online payments (RAZORPAY), keep the cart until payment is actually verified.
+    if (paymentMethod === "COD") {
+      cart.items = [];
+      await cart.save();
+    }
 
     res.status(201).json(order);
   } catch (error) {
@@ -113,7 +116,15 @@ const createOrder = async (req, res, next) => {
 // @route GET /api/orders/my — logged-in customer's own orders
 const getMyOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find({ userId: req.user._id }).sort({
+    // Exclude abandoned/unpaid Razorpay checkout attempts
+    const orders = await Order.find({
+      userId: req.user._id,
+      $or: [
+        { paymentMethod: "COD" },
+        { paymentStatus: { $in: ["PAID", "PARTIALLY_REFUNDED", "REFUNDED"] } },
+        { orderStatus: "CANCELLED" },
+      ],
+    }).sort({
       createdAt: -1,
     });
     res.json(orders);
@@ -152,7 +163,15 @@ const getAllOrders = async (req, res, next) => {
 
     const filter = {};
     if (orderStatus) filter.orderStatus = orderStatus;
-    if (paymentStatus) filter.paymentStatus = paymentStatus;
+    if (paymentStatus) {
+      filter.paymentStatus = paymentStatus;
+    } else {
+      filter.$or = [
+        { paymentMethod: "COD" },
+        { paymentStatus: { $in: ["PAID", "PARTIALLY_REFUNDED", "REFUNDED"] } },
+        { orderStatus: "CANCELLED" },
+      ];
+    }
 
     const orders = await Order.find(filter)
       .populate("userId", "name email phone")
@@ -301,6 +320,45 @@ const cancelOrder = async (req, res, next) => {
   }
 };
 
+// @route DELETE /api/orders/:id/unpaid — discard an unpaid Razorpay checkout attempt
+const discardUnpaidOrder = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const orderUserId = order.userId?._id ? order.userId._id.toString() : order.userId.toString();
+    const isOwner = orderUserId === req.user._id.toString();
+    const isAdmin = req.user.role === "ADMIN";
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    // Only allow discarding if it was an online payment and was never confirmed as paid
+    if (order.paymentMethod === "RAZORPAY" && order.paymentStatus === "PENDING") {
+      // Restore product stock
+      for (const item of order.items) {
+        await Product.findByIdAndUpdate(item.productId, {
+          $inc: { stock: item.quantity },
+        });
+      }
+
+      // Delete any pending payment records for this order
+      await Payment.deleteMany({ orderId: order._id });
+
+      // Delete the order itself from database
+      await Order.findByIdAndDelete(order._id);
+
+      return res.json({ message: "Unpaid order discarded and stock restored" });
+    }
+
+    res.status(400).json({ message: "Only unpaid online orders can be discarded" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createOrder,
   getMyOrders,
@@ -309,4 +367,5 @@ module.exports = {
   updateOrderStatus,
   updateShippingInfo,
   cancelOrder,
-};
+  discardUnpaidOrder,
+};

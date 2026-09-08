@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const razorpayInstance = require('../config/razorpay');
 const Payment = require('../models/Payment');
 const Order = require('../models/Order');
+const Cart = require('../models/Cart');
 
 // @route POST /api/payments/razorpay/create-order
 // Body: { "orderId": "<your Order _id>" }
@@ -94,6 +95,9 @@ const verifyRazorpayPayment = async (req, res, next) => {
     order.paymentStatus = 'PAID';
     order.orderStatus = 'CONFIRMED';
     await order.save();
+
+    // Clear user's cart now that online payment is verified
+    await Cart.findOneAndUpdate({ userId: order.userId }, { items: [] });
 
     res.json({ message: 'Payment verified successfully', payment, order });
   } catch (error) {
