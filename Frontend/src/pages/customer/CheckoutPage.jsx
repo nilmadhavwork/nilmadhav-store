@@ -94,10 +94,23 @@ export const CheckoutPage = () => {
 
       // 2. Handle Razorpay Online Payment Flow
       if (paymentMethod === 'RAZORPAY') {
-        const razorpayOrder = await paymentApi.createRazorpayOrder(order._id, order.totalAmount);
+        let razorpayOrder;
+        try {
+          razorpayOrder = await paymentApi.createRazorpayOrder(order._id, order.totalAmount);
+        } catch (rzpErr) {
+          try {
+            await orderApi.discardUnpaidOrder(order._id);
+          } catch (discardErr) {
+            console.warn('Could not discard unpaid order:', discardErr.message);
+          }
+          await fetchCart();
+          throw rzpErr;
+        }
 
         // Check if Razorpay script is loaded on window
         if (window.Razorpay) {
+          let paymentCompleted = false;
+
           const options = {
             key: razorpayOrder.keyId || 'rzp_test_placeholder_key',
             amount: razorpayOrder.amount,
@@ -114,6 +127,7 @@ export const CheckoutPage = () => {
               color: '#5B1527',
             },
             handler: async (response) => {
+              paymentCompleted = true;
               try {
                 // Verify payment on backend
                 await paymentApi.verifyRazorpayPayment({
@@ -132,9 +146,16 @@ export const CheckoutPage = () => {
               }
             },
             modal: {
-              ondismiss: () => {
-                info('Payment window closed. You can complete payment from your orders page.');
-                navigate(`/orders/${order._id}`);
+              ondismiss: async () => {
+                if (paymentCompleted) return;
+                try {
+                  await orderApi.discardUnpaidOrder(order._id);
+                } catch (discardErr) {
+                  console.warn('Could not discard unpaid order:', discardErr.message);
+                }
+                await fetchCart();
+                info('Payment cancelled. Your bag items have been retained and no order was placed.');
+                setPlacingOrder(false);
               },
             },
           };
@@ -142,8 +163,14 @@ export const CheckoutPage = () => {
           const rzp = new window.Razorpay(options);
           rzp.open();
         } else {
+          try {
+            await orderApi.discardUnpaidOrder(order._id);
+          } catch (discardErr) {
+            console.warn('Could not discard unpaid order:', discardErr.message);
+          }
+          await fetchCart();
           error('Razorpay payment gateway could not be loaded. Please check your network or try Cash on Delivery.');
-          navigate(`/orders/${order._id}`);
+          setPlacingOrder(false);
         }
       } else {
         // COD order confirmed directly by backend

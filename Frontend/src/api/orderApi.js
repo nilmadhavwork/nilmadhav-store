@@ -25,6 +25,12 @@ export const orderApi = {
     return response.data;
   },
 
+  // DELETE /api/orders/:id/unpaid — discard an unpaid online order attempt & restore stock
+  discardUnpaidOrder: async (id) => {
+    const response = await apiClient.delete(`/orders/${id}/unpaid`);
+    return response.data;
+  },
+
   // GET /api/orders — admin view all orders with filters
   getAllOrders: async (params = {}) => {
     const response = await apiClient.get('/orders', { params });

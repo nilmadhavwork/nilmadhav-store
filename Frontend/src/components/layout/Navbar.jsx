@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   ShoppingBag,
   Heart,
@@ -22,6 +22,22 @@ export const Navbar = () => {
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Parse active route & query parameters accurately
+  const searchParams = new URLSearchParams(location.search);
+  const currentFabric = searchParams.get('fabric');
+  const currentOccasion = searchParams.get('occasion');
+
+  const isHomeActive = location.pathname === '/';
+  const isAllCollectionsActive =
+    location.pathname === '/products' &&
+    !currentFabric &&
+    !currentOccasion;
+  const isBanarasiActive = location.pathname === '/products' && currentFabric === 'Banarasi';
+  const isKanjivaramActive = location.pathname === '/products' && currentFabric === 'Kanjivaram';
+  const isChanderiActive = location.pathname === '/products' && currentFabric === 'Chanderi';
+  const isBridalActive = location.pathname === '/products' && currentOccasion === 'Bridal';
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -82,24 +98,24 @@ export const Navbar = () => {
 
           {/* Desktop Navigation Links */}
           <nav className="nav-links">
-            <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
+            <Link to="/" className={`nav-link ${isHomeActive ? 'active' : ''}`}>
               Home
-            </NavLink>
-            <NavLink to="/products" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            </Link>
+            <Link to="/products" className={`nav-link ${isAllCollectionsActive ? 'active' : ''}`}>
               All Collections
-            </NavLink>
-            <NavLink to="/products?fabric=Banarasi" className="nav-link">
+            </Link>
+            <Link to="/products?fabric=Banarasi" className={`nav-link ${isBanarasiActive ? 'active' : ''}`}>
               Banarasi
-            </NavLink>
-            <NavLink to="/products?fabric=Kanjivaram" className="nav-link">
+            </Link>
+            <Link to="/products?fabric=Kanjivaram" className={`nav-link ${isKanjivaramActive ? 'active' : ''}`}>
               Kanjivaram
-            </NavLink>
-            <NavLink to="/products?fabric=Chanderi" className="nav-link">
+            </Link>
+            <Link to="/products?fabric=Chanderi" className={`nav-link ${isChanderiActive ? 'active' : ''}`}>
               Chanderi
-            </NavLink>
-            <NavLink to="/products?occasion=Bridal" className="nav-link">
+            </Link>
+            <Link to="/products?occasion=Bridal" className={`nav-link ${isBridalActive ? 'active' : ''}`}>
               Bridal Edit
-            </NavLink>
+            </Link>
           </nav>
 
           {/* Right Action Icons */}
@@ -259,28 +275,28 @@ export const Navbar = () => {
             </div>
 
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
-              <Link to="/" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/" className={`nav-link ${isHomeActive ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
                 Home
               </Link>
-              <Link to="/products" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/products" className={`nav-link ${isAllCollectionsActive ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
                 All Collections
               </Link>
-              <Link to="/products?fabric=Banarasi" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/products?fabric=Banarasi" className={`nav-link ${isBanarasiActive ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
                 Banarasi Silk
               </Link>
-              <Link to="/products?fabric=Kanjivaram" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/products?fabric=Kanjivaram" className={`nav-link ${isKanjivaramActive ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
                 Kanjivaram Silk
               </Link>
-              <Link to="/products?fabric=Chanderi" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/products?fabric=Chanderi" className={`nav-link ${isChanderiActive ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
                 Chanderi Weaves
               </Link>
-              <Link to="/products?occasion=Bridal" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/products?occasion=Bridal" className={`nav-link ${isBridalActive ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
                 Bridal Edit
               </Link>
-              <Link to="/wishlist" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/wishlist" className={`nav-link ${location.pathname === '/wishlist' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
                 Wishlist ({wishlistCount})
               </Link>
-              <Link to="/cart" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/cart" className={`nav-link ${location.pathname === '/cart' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
                 Shopping Bag ({cartCount})
               </Link>
             </nav>

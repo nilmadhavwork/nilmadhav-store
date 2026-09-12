@@ -72,13 +72,15 @@
   position: relative;
   padding: 0.5rem 0;
   letter-spacing: 0.02em;
+  transition: color var(--transition-fast);
 }
 
-.nav-link:hover, .nav-link.active {
+.nav-link:hover,
+.nav-link.active {
   color: var(--color-primary);
 }
 
-.nav-link.active::after {
+.nav-link::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -86,7 +88,20 @@
   width: 100%;
   height: 2px;
   background-color: var(--color-gold);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform var(--transition-fast);
 }
+
+.nav-link:hover::after,
+.nav-link.active::after {
+  transform: scaleX(1);
+}
+
+.mobile-drawer-content .nav-link {
+  width: fit-content;
+}
+
 
 .nav-actions {
   display: flex;
