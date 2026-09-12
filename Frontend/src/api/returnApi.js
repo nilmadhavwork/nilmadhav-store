@@ -8,8 +8,8 @@ export const returnApi = {
   },
 
   // GET /api/returns/my — customer's own return requests
-  getMyReturns: async () => {
-    const res = await apiClient.get('/returns/my');
+  getMyReturns: async (params = {}) => {
+    const res = await apiClient.get('/returns/my', { params });
     return res.data;
   },
 

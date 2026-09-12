@@ -59,25 +59,24 @@ const createReturn = async (req, res, next) => {
         });
     }
 
-    for (const item of parsedItems) {
-      const orderedItem = order.items.find(
-        (oi) => oi.productId.toString() === item.productId,
-      );
-      if (!orderedItem) {
-        return res
-          .status(400)
-          .json({
-            message: `Product ${item.productId} was not part of this order`,
-          });
-      }
-      if (item.quantity > orderedItem.quantity) {
-        return res
-          .status(400)
-          .json({
-            message: `Return quantity exceeds ordered quantity for ${orderedItem.productName}`,
-          });
-      }
+    // STRICT RULE: An order can only have ONE return request submitted against it (unless previously REJECTED)
+    const existingReturn = await Return.findOne({
+      orderId,
+      status: { $ne: "REJECTED" },
+    });
+
+    if (existingReturn) {
+      return res.status(400).json({
+        message: `A return request (${existingReturn.returnNumber}) has already been submitted for this order. Current Status: ${existingReturn.status.replace(/_/g, " ")}`,
+      });
     }
+
+    // Include all items of the order for whole-order return
+    const returnItems = order.items.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      reason: reason || "Whole order return request",
+    }));
 
     // Actually upload proof-of-damage/wrong-item images if any were attached
     let images = [];
@@ -93,7 +92,7 @@ const createReturn = async (req, res, next) => {
     const returnRequest = await Return.create({
       orderId,
       userId: order.userId?._id || order.userId,
-      items: parsedItems,
+      items: returnItems,
       reason,
       description,
       images,
@@ -108,7 +107,11 @@ const createReturn = async (req, res, next) => {
 // @route GET /api/returns/my — customer's own return requests
 const getMyReturns = async (req, res, next) => {
   try {
-    const returns = await Return.find({ userId: req.user._id }).sort({
+    const filter = { userId: req.user._id };
+    if (req.query.orderId) {
+      filter.orderId = req.query.orderId;
+    }
+    const returns = await Return.find(filter).sort({
       createdAt: -1,
     });
     res.json(returns);
