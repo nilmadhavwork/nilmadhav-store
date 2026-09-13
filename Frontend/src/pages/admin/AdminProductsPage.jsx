@@ -150,12 +150,14 @@ export const AdminProductsPage = () => {
                       <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>{p.color || 'Standard'}</div>
                     </td>
                     <td>
-                      <div style={{ fontWeight: 700 }}>{formatCurrency(p.discountPrice || p.price)}</div>
-                      {p.discountPrice && (
+                      <div style={{ fontWeight: 700 }}>
+                        {formatCurrency(p.discountPrice && p.discountPrice > 0 && p.discountPrice < p.price ? p.discountPrice : p.price)}
+                      </div>
+                      {p.discountPrice && p.discountPrice > 0 && p.discountPrice < p.price ? (
                         <div style={{ fontSize: '0.75rem', color: '#9CA3AF', textDecoration: 'line-through' }}>
                           {formatCurrency(p.price)}
                         </div>
-                      )}
+                      ) : null}
                     </td>
                     <td>
                       <span className={`badge ${isOutOfStock ? 'badge-danger' : p.stock < 5 ? 'badge-warning' : 'badge-success'}`}>

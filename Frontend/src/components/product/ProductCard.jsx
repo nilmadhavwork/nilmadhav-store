@@ -24,12 +24,13 @@ export const ProductCard = ({ product }) => {
 
   const primaryImage = images.find((img) => img.isPrimary)?.url || images[0]?.url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80';
   const secondaryImage = images[1]?.url || primaryImage;
-  const discountPercent = calculateDiscount(price, discountPrice);
+  const hasDiscount = discountPrice && Number(discountPrice) > 0 && Number(discountPrice) < Number(price);
+  const discountPercent = hasDiscount ? calculateDiscount(price, discountPrice) : 0;
   const isOutOfStock = stock <= 0;
   const isWishlisted = isInWishlist(_id);
 
-  const displayPrice = discountPrice || price;
-  const originalPrice = discountPrice ? price : null;
+  const displayPrice = hasDiscount ? Number(discountPrice) : Number(price);
+  const originalPrice = hasDiscount ? Number(price) : null;
 
   const categoryName = typeof categoryId === 'object' ? categoryId?.name : 'Saree';
   const productUrl = `/products/${slug || _id}`;

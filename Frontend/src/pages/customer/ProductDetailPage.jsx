@@ -106,8 +106,9 @@ export const ProductDetailPage = () => {
 
   const isWishlisted = isInWishlist(_id);
   const isOutOfStock = stock <= 0;
-  const discountPercent = calculateDiscount(price, discountPrice);
-  const displayPrice = discountPrice || price;
+  const hasDiscount = discountPrice && Number(discountPrice) > 0 && Number(discountPrice) < Number(price);
+  const displayPrice = hasDiscount ? Number(discountPrice) : Number(price);
+  const discountPercent = hasDiscount ? calculateDiscount(price, discountPrice) : 0;
   const categoryName = typeof categoryId === 'object' ? categoryId?.name : 'Handloom';
 
   const handleAddToBag = async () => {
@@ -169,16 +170,16 @@ export const ProductDetailPage = () => {
               <span style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--color-primary-dark)' }}>
                 {formatCurrency(displayPrice)}
               </span>
-              {discountPrice && (
+              {hasDiscount ? (
                 <span style={{ fontSize: '1.25rem', color: 'var(--color-text-light)', textDecoration: 'line-through' }}>
                   {formatCurrency(price)}
                 </span>
-              )}
-              {discountPercent > 0 && (
+              ) : null}
+              {discountPercent > 0 ? (
                 <span className="badge badge-gold" style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}>
                   {discountPercent}% OFF
                 </span>
-              )}
+              ) : null}
             </div>
 
             {/* Stock Availability */}

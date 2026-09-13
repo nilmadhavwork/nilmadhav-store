@@ -41,14 +41,18 @@ const addToCart = async (req, res, next) => {
     const cart = await getOrCreateCart(req.user._id);
     const existingItem = cart.items.find((item) => item.productId.toString() === productId);
 
+    const effectivePrice = (product.discountPrice && product.discountPrice > 0 && product.discountPrice < product.price)
+      ? product.discountPrice
+      : product.price;
+
     if (existingItem) {
       existingItem.quantity += Number(quantity);
-      existingItem.price = product.discountPrice || product.price; // refresh price snapshot
+      existingItem.price = effectivePrice; // refresh price snapshot
     } else {
       cart.items.push({
         productId,
         quantity,
-        price: product.discountPrice || product.price,
+        price: effectivePrice,
       });
     }
 

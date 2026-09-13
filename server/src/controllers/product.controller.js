@@ -49,14 +49,25 @@ const createProduct = async (req, res, next) => {
       }));
     }
 
+    let validDiscountPrice = undefined;
+    if (
+      discountPrice !== undefined &&
+      discountPrice !== null &&
+      discountPrice !== '' &&
+      Number(discountPrice) > 0 &&
+      Number(discountPrice) < Number(price)
+    ) {
+      validDiscountPrice = Number(discountPrice);
+    }
+
     const product = await Product.create({
       name,
       slug,
       description,
       categoryId,
-      price,
-      discountPrice,
-      stock,
+      price: Number(price),
+      discountPrice: validDiscountPrice,
+      stock: Number(stock),
       sku,
       fabric,
       color,
@@ -142,6 +153,20 @@ const updateProduct = async (req, res, next) => {
 
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
+
+    if (updateData.discountPrice !== undefined) {
+      const effectivePrice = Number(updateData.price || product.price);
+      if (
+        updateData.discountPrice === '' ||
+        updateData.discountPrice === null ||
+        Number(updateData.discountPrice) <= 0 ||
+        Number(updateData.discountPrice) >= effectivePrice
+      ) {
+        updateData.discountPrice = null;
+      } else {
+        updateData.discountPrice = Number(updateData.discountPrice);
+      }
+    }
 
     // If new images were uploaded, append them to existing images
     if (req.files && req.files.length > 0) {

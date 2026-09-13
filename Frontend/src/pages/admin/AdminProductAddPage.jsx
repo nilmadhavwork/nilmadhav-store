@@ -33,6 +33,41 @@ export const AdminProductAddPage = () => {
     blouseColor: '',
     careInstructions: 'Dry clean only',
   });
+  const [discountAmount, setDiscountAmount] = useState('');
+
+  const handlePriceChange = (newPrice) => {
+    setFormData((prev) => {
+      let nextDiscountPrice = prev.discountPrice;
+      if (discountAmount && Number(discountAmount) > 0 && Number(newPrice) > Number(discountAmount)) {
+        nextDiscountPrice = String(Number(newPrice) - Number(discountAmount));
+      } else if (nextDiscountPrice && Number(nextDiscountPrice) >= Number(newPrice)) {
+        nextDiscountPrice = '';
+      }
+      return { ...prev, price: newPrice, discountPrice: nextDiscountPrice };
+    });
+  };
+
+  const handleDiscountAmountChange = (amt) => {
+    setDiscountAmount(amt);
+    const p = Number(formData.price || 0);
+    const d = Number(amt);
+    if (amt !== '' && !isNaN(d) && d > 0 && p > d) {
+      setFormData((prev) => ({ ...prev, discountPrice: String(p - d) }));
+    } else {
+      setFormData((prev) => ({ ...prev, discountPrice: '' }));
+    }
+  };
+
+  const handleDiscountPriceChange = (dp) => {
+    setFormData((prev) => ({ ...prev, discountPrice: dp }));
+    const p = Number(formData.price || 0);
+    const offer = Number(dp);
+    if (dp !== '' && !isNaN(offer) && offer > 0 && p > offer) {
+      setDiscountAmount(String(p - offer));
+    } else {
+      setDiscountAmount('');
+    }
+  };
 
   // Multiple Selected Image Files & Previews
   const [selectedFiles, setSelectedFiles] = useState([]); // Array of File objects
@@ -116,8 +151,9 @@ export const AdminProductAddPage = () => {
       data.append('description', formData.description);
       data.append('categoryId', formData.categoryId);
       data.append('price', Number(formData.price));
-      if (formData.discountPrice) {
-        data.append('discountPrice', Number(formData.discountPrice));
+      const dp = Number(formData.discountPrice);
+      if (formData.discountPrice && !isNaN(dp) && dp > 0 && dp < Number(formData.price)) {
+        data.append('discountPrice', dp);
       }
       data.append('stock', Number(formData.stock));
       data.append('sku', formData.sku);
@@ -230,20 +266,28 @@ export const AdminProductAddPage = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
             <Input
-              label="Standard Retail Price (₹)"
+              label="Standard Retail Price (MRP in ₹)"
               type="number"
               required
               value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-              placeholder="e.g. 14500"
+              onChange={(e) => handlePriceChange(e.target.value)}
+              placeholder="e.g. 500"
             />
 
             <Input
-              label="Discounted Offer Price (₹, Optional)"
+              label="Discount Amount (₹ Off, Optional)"
+              type="number"
+              value={discountAmount}
+              onChange={(e) => handleDiscountAmountChange(e.target.value)}
+              placeholder="e.g. 200 (or 0 for no discount)"
+            />
+
+            <Input
+              label="Customer Offer / Selling Price (₹)"
               type="number"
               value={formData.discountPrice}
-              onChange={(e) => setFormData({ ...formData, discountPrice: e.target.value })}
-              placeholder="Leave blank if no discount"
+              onChange={(e) => handleDiscountPriceChange(e.target.value)}
+              placeholder="e.g. 300 (auto-calculated)"
             />
 
             <Input
@@ -255,6 +299,54 @@ export const AdminProductAddPage = () => {
               placeholder="e.g. 15"
             />
           </div>
+
+          {/* Pricing Preview Helper */}
+          {formData.price && Number(formData.price) > 0 && (
+            <div style={{
+              marginTop: '1.25rem',
+              padding: '0.85rem 1.25rem',
+              borderRadius: 'var(--radius-sm)',
+              border: formData.discountPrice && Number(formData.discountPrice) > 0 && Number(formData.discountPrice) < Number(formData.price)
+                ? '1px solid #FDE68A'
+                : '1px solid #E5E7EB',
+              backgroundColor: formData.discountPrice && Number(formData.discountPrice) > 0 && Number(formData.discountPrice) < Number(formData.price)
+                ? '#FEF3C7'
+                : '#F9FAFB',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
+              fontSize: '0.9rem',
+            }}>
+              {formData.discountPrice && Number(formData.discountPrice) > 0 && Number(formData.discountPrice) < Number(formData.price) ? (
+                <>
+                  <div>
+                    <span style={{ color: '#92400E', fontWeight: 600 }}>Discount Active: </span>
+                    <span style={{ color: '#1F2937' }}>Customer will pay </span>
+                    <strong style={{ color: '#047857', fontSize: '1.05rem' }}>₹{Number(formData.discountPrice).toLocaleString('en-IN')}</strong>
+                    <span style={{ color: '#6B7280', textDecoration: 'line-through', marginLeft: '0.5rem' }}>
+                      ₹{Number(formData.price).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <span className="badge badge-gold" style={{ fontSize: '0.75rem' }}>
+                      {Math.round(((Number(formData.price) - Number(formData.discountPrice)) / Number(formData.price)) * 100)}% OFF
+                    </span>
+                    <span style={{ fontSize: '0.8rem', color: '#92400E', fontWeight: 600 }}>
+                      (Save ₹{Number(formData.price) - Number(formData.discountPrice)})
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ color: '#6B7280' }}>
+                  <span>No discount applied: Customer will pay full retail price </span>
+                  <strong style={{ color: '#1F2937' }}>₹{Number(formData.price).toLocaleString('en-IN')}</strong>
+                  <span> (no strikethrough price).</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* SECTION 3: MULTI-IMAGE UPLOAD (Requirement Highlight) */}

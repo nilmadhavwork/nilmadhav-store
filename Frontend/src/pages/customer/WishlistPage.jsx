@@ -90,7 +90,8 @@ export const WishlistPage = () => {
             const image =
               product.images?.[0]?.url ||
               "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80";
-            const price = product.discountPrice || product.price;
+            const hasDisc = product.discountPrice && Number(product.discountPrice) > 0 && Number(product.discountPrice) < Number(product.price);
+            const price = hasDisc ? Number(product.discountPrice) : Number(product.price);
 
             return (
               <div key={product._id} className="product-card">
@@ -116,7 +117,7 @@ export const WishlistPage = () => {
                     <span className="price-current">
                       {formatCurrency(price)}
                     </span>
-                    {product.discountPrice ? (
+                    {hasDisc ? (
                       <span className="price-original">
                         {formatCurrency(product.price)}
                       </span>

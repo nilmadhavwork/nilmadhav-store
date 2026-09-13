@@ -79,7 +79,10 @@ const moveToCart = async (req, res, next) => {
     if (existingItem) {
       existingItem.quantity += 1;
     } else {
-      cart.items.push({ productId, quantity: 1, price: product.discountPrice || product.price });
+      const effectivePrice = (product.discountPrice && product.discountPrice > 0 && product.discountPrice < product.price)
+        ? product.discountPrice
+        : product.price;
+      cart.items.push({ productId, quantity: 1, price: effectivePrice });
     }
     await cart.save();
 

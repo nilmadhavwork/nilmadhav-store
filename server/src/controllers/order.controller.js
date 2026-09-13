@@ -50,7 +50,9 @@ const createOrder = async (req, res, next) => {
           .json({ message: `Insufficient stock for ${product.name}` });
       }
 
-      const currentPrice = product.discountPrice || product.price;
+      const currentPrice = (product.discountPrice && product.discountPrice > 0 && product.discountPrice < product.price)
+        ? product.discountPrice
+        : product.price;
       const lineTotal = currentPrice * cartItem.quantity;
       subtotal += lineTotal;
 

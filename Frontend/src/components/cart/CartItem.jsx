@@ -8,7 +8,10 @@ export const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
 
   const product = item.productId;
   const quantity = item.quantity || 1;
-  const linePrice = item.price || product.discountPrice || product.price || 0;
+  const effectiveProductPrice = (product.discountPrice && Number(product.discountPrice) > 0 && Number(product.discountPrice) < Number(product.price))
+    ? Number(product.discountPrice)
+    : Number(product.price || 0);
+  const linePrice = item.price || effectiveProductPrice || 0;
   const lineTotal = linePrice * quantity;
 
   const image = product.images?.[0]?.url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80';

@@ -35,6 +35,41 @@ export const AdminProductEditPage = () => {
     blouseColor: '',
     careInstructions: '',
   });
+  const [discountAmount, setDiscountAmount] = useState('');
+
+  const handlePriceChange = (newPrice) => {
+    setFormData((prev) => {
+      let nextDiscountPrice = prev.discountPrice;
+      if (discountAmount && Number(discountAmount) > 0 && Number(newPrice) > Number(discountAmount)) {
+        nextDiscountPrice = String(Number(newPrice) - Number(discountAmount));
+      } else if (nextDiscountPrice && Number(nextDiscountPrice) >= Number(newPrice)) {
+        nextDiscountPrice = '';
+      }
+      return { ...prev, price: newPrice, discountPrice: nextDiscountPrice };
+    });
+  };
+
+  const handleDiscountAmountChange = (amt) => {
+    setDiscountAmount(amt);
+    const p = Number(formData.price || 0);
+    const d = Number(amt);
+    if (amt !== '' && !isNaN(d) && d > 0 && p > d) {
+      setFormData((prev) => ({ ...prev, discountPrice: String(p - d) }));
+    } else {
+      setFormData((prev) => ({ ...prev, discountPrice: '' }));
+    }
+  };
+
+  const handleDiscountPriceChange = (dp) => {
+    setFormData((prev) => ({ ...prev, discountPrice: dp }));
+    const p = Number(formData.price || 0);
+    const offer = Number(dp);
+    if (dp !== '' && !isNaN(offer) && offer > 0 && p > offer) {
+      setDiscountAmount(String(p - offer));
+    } else {
+      setDiscountAmount('');
+    }
+  };
 
   const [existingImages, setExistingImages] = useState([]);
   const [newFiles, setNewFiles] = useState([]);
@@ -52,12 +87,15 @@ export const AdminProductEditPage = () => {
 
         const found = prodList?.products?.find((p) => p._id === id || p.slug === id);
         if (found) {
+          const hasDisc = found.discountPrice && Number(found.discountPrice) > 0 && Number(found.discountPrice) < Number(found.price);
+          const discAmt = hasDisc ? String(Number(found.price) - Number(found.discountPrice)) : '';
+          setDiscountAmount(discAmt);
           setFormData({
             name: found.name || '',
             description: found.description || '',
             categoryId: found.categoryId?._id || found.categoryId || '',
             price: found.price || '',
-            discountPrice: found.discountPrice || '',
+            discountPrice: hasDisc ? String(found.discountPrice) : '',
             stock: found.stock || 0,
             sku: found.sku || '',
             fabric: found.fabric || 'Banarasi Silk',
@@ -128,12 +166,21 @@ export const AdminProductEditPage = () => {
     try {
       setSubmitting(true);
 
+      // Prepare clean payload
+      const dp = Number(formData.discountPrice);
+      const cleanDiscountPrice = (formData.discountPrice !== '' && !isNaN(dp) && dp > 0 && dp < Number(formData.price)) ? dp : null;
+      const payload = {
+        ...formData,
+        price: Number(formData.price),
+        discountPrice: cleanDiscountPrice,
+      };
+
       // If new files were added, submit as multipart/form-data
       if (newFiles.length > 0) {
         const data = new FormData();
-        Object.keys(formData).forEach((k) => {
-          if (formData[k] !== undefined && formData[k] !== null) {
-            data.append(k, formData[k]);
+        Object.keys(payload).forEach((k) => {
+          if (payload[k] !== undefined && payload[k] !== null) {
+            data.append(k, payload[k]);
           }
         });
         newFiles.forEach((file) => {
@@ -142,7 +189,7 @@ export const AdminProductEditPage = () => {
         await productApi.update(id, data, true);
       } else {
         // Submit JSON update
-        await productApi.update(id, formData, false);
+        await productApi.update(id, payload, false);
       }
 
       success('Saree details updated successfully!');
@@ -238,18 +285,28 @@ export const AdminProductEditPage = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
             <Input
-              label="Retail Price (₹)"
+              label="Standard Retail Price (MRP in ₹)"
               type="number"
               required
               value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              onChange={(e) => handlePriceChange(e.target.value)}
+              placeholder="e.g. 500"
             />
 
             <Input
-              label="Discounted Price (₹)"
+              label="Discount Amount (₹ Off, Optional)"
+              type="number"
+              value={discountAmount}
+              onChange={(e) => handleDiscountAmountChange(e.target.value)}
+              placeholder="e.g. 200 (or 0 for no discount)"
+            />
+
+            <Input
+              label="Customer Offer / Selling Price (₹)"
               type="number"
               value={formData.discountPrice}
-              onChange={(e) => setFormData({ ...formData, discountPrice: e.target.value })}
+              onChange={(e) => handleDiscountPriceChange(e.target.value)}
+              placeholder="e.g. 300 (auto-calculated)"
             />
 
             <Input
@@ -260,6 +317,54 @@ export const AdminProductEditPage = () => {
               onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
             />
           </div>
+
+          {/* Pricing Preview Helper */}
+          {formData.price && Number(formData.price) > 0 && (
+            <div style={{
+              marginTop: '1.25rem',
+              padding: '0.85rem 1.25rem',
+              borderRadius: 'var(--radius-sm)',
+              border: formData.discountPrice && Number(formData.discountPrice) > 0 && Number(formData.discountPrice) < Number(formData.price)
+                ? '1px solid #FDE68A'
+                : '1px solid #E5E7EB',
+              backgroundColor: formData.discountPrice && Number(formData.discountPrice) > 0 && Number(formData.discountPrice) < Number(formData.price)
+                ? '#FEF3C7'
+                : '#F9FAFB',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
+              fontSize: '0.9rem',
+            }}>
+              {formData.discountPrice && Number(formData.discountPrice) > 0 && Number(formData.discountPrice) < Number(formData.price) ? (
+                <>
+                  <div>
+                    <span style={{ color: '#92400E', fontWeight: 600 }}>Discount Active: </span>
+                    <span style={{ color: '#1F2937' }}>Customer will pay </span>
+                    <strong style={{ color: '#047857', fontSize: '1.05rem' }}>₹{Number(formData.discountPrice).toLocaleString('en-IN')}</strong>
+                    <span style={{ color: '#6B7280', textDecoration: 'line-through', marginLeft: '0.5rem' }}>
+                      ₹{Number(formData.price).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <span className="badge badge-gold" style={{ fontSize: '0.75rem' }}>
+                      {Math.round(((Number(formData.price) - Number(formData.discountPrice)) / Number(formData.price)) * 100)}% OFF
+                    </span>
+                    <span style={{ fontSize: '0.8rem', color: '#92400E', fontWeight: 600 }}>
+                      (Save ₹{Number(formData.price) - Number(formData.discountPrice)})
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ color: '#6B7280' }}>
+                  <span>No discount applied: Customer will pay full retail price </span>
+                  <strong style={{ color: '#1F2937' }}>₹{Number(formData.price).toLocaleString('en-IN')}</strong>
+                  <span> (no strikethrough price).</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Existing Images & Adding New Images */}
