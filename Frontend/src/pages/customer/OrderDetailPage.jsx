@@ -15,6 +15,7 @@ import { paymentApi } from "../../api/paymentApi";
 import { returnApi } from "../../api/returnApi";
 import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
+import { useSettings } from "../../context/SettingsContext";
 import OrderTimeline from "../../components/order/OrderTimeline";
 import CancelOrderModal from "../../components/order/CancelOrderModal";
 import ReturnOrderModal from "../../components/order/ReturnOrderModal";
@@ -32,6 +33,7 @@ export const OrderDetailPage = () => {
   const navigate = useNavigate();
   const { success, error } = useToast();
   const { user } = useAuth();
+  const { returnSettings } = useSettings();
 
   const [order, setOrder] = useState(null);
   const [existingReturns, setExistingReturns] = useState([]);
@@ -217,8 +219,16 @@ export const OrderDetailPage = () => {
 
   // Cancellation is permitted only before dispatch
   const canCancel = ["PENDING", "CONFIRMED", "PACKED"].includes(orderStatus);
-  // Return is permitted once delivered ONLY IF no return request has been submitted for this order yet
-  const canReturn = orderStatus === "DELIVERED" && !hasExistingReturn;
+
+  // Return settings alignment with backend validation
+  const returnEnabled = returnSettings?.returnEnabled ?? true;
+  const returnWindowDays = returnSettings?.returnWindowDays ?? 7;
+  const deliveredDate = order.updatedAt ? new Date(order.updatedAt) : new Date(createdAt);
+  const daysSinceDelivery = (Date.now() - deliveredDate.getTime()) / (1000 * 60 * 60 * 24);
+  const isWithinReturnWindow = daysSinceDelivery <= returnWindowDays;
+
+  // Return is permitted once delivered ONLY IF returns are enabled, within window days, and no active return request exists
+  const canReturn = orderStatus === "DELIVERED" && !hasExistingReturn && returnEnabled && isWithinReturnWindow;
   // Retry Payment is allowed when payment is PENDING or FAILED, order is not CANCELLED, and payment method is not COD
   const canRetryPayment =
     (paymentStatus === "PENDING" || paymentStatus === "FAILED") &&
@@ -321,6 +331,18 @@ export const OrderDetailPage = () => {
                 <RotateCcw size={15} />
                 <span>Request Return</span>
               </Button>
+            )}
+
+            {orderStatus === "DELIVERED" && !hasExistingReturn && !returnEnabled && (
+              <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", padding: "0.4rem 0.75rem", backgroundColor: "var(--color-bg-alt)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-sm)", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+                <RotateCcw size={14} /> Returns Disabled
+              </span>
+            )}
+
+            {orderStatus === "DELIVERED" && !hasExistingReturn && returnEnabled && !isWithinReturnWindow && (
+              <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", padding: "0.4rem 0.75rem", backgroundColor: "var(--color-bg-alt)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-sm)", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+                <RotateCcw size={14} /> {returnWindowDays}-Day Return Window Expired
+              </span>
             )}
           </div>
         </div>

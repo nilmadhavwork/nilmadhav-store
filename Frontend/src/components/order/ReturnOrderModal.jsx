@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Modal from '../common/Modal';
 import Button from '../common/Button';
 import { RotateCcw } from 'lucide-react';
+import { useSettings } from '../../context/SettingsContext';
 
 export const ReturnOrderModal = ({
   isOpen,
@@ -11,6 +12,9 @@ export const ReturnOrderModal = ({
   loading = false,
   existingReturns = [],
 }) => {
+  const { returnSettings } = useSettings();
+  const returnWindowDays = returnSettings?.returnWindowDays || 7;
+
   const [reason, setReason] = useState('Color mismatch with website photos');
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
@@ -56,7 +60,7 @@ export const ReturnOrderModal = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--color-gold-bg)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.25rem' }}>
           <RotateCcw size={20} color="var(--color-gold-dark)" />
           <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
-            7-Day Easy Return Policy: Return applies to the entire order. Items must be unworn with original tags intact.
+            {returnWindowDays}-Day Easy Return Policy: Return applies to the entire order. Items must be unworn with original tags intact.
           </div>
         </div>
 

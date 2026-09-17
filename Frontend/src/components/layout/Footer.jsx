@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Truck, Sparkles, RefreshCw, Mail, Phone, MapPin } from 'lucide-react';
+import { useSettings } from '../../context/SettingsContext';
 
 export const Footer = () => {
+  const { returnSettings } = useSettings();
+
   return (
     <footer style={{ backgroundColor: '#21070F', color: '#E8DED6', borderTop: '2px solid var(--color-gold)', marginTop: 'auto' }}>
       {/* Heritage Assurance Badges */}
@@ -29,7 +32,9 @@ export const Footer = () => {
               <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(197, 160, 89, 0.15)', color: 'var(--color-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
                 <RefreshCw size={24} />
               </div>
-              <h4 style={{ color: '#FAF5EB', fontSize: '1.05rem', marginBottom: '0.25rem' }}>7-Day Easy Returns</h4>
+              <h4 style={{ color: '#FAF5EB', fontSize: '1.05rem', marginBottom: '0.25rem' }}>
+                {returnSettings?.returnEnabled !== false ? `${returnSettings?.returnWindowDays || 7}-Day Easy Returns` : 'Doorstep Return Policy'}
+              </h4>
               <p style={{ fontSize: '0.85rem', color: '#BFB5AC' }}>Hassle-free doorstep returns and full refunds</p>
             </div>
 

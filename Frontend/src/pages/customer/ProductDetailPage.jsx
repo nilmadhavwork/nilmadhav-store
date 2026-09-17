@@ -352,7 +352,11 @@ export const ProductDetailPage = () => {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <RotateCcw size={18} color="var(--color-gold-dark)" />
-                <span>{returnSettings?.returnWindowDays || 7}-Day Doorstep Return & Exchange Policy</span>
+                <span>
+                  {returnSettings?.returnEnabled !== false
+                    ? `${returnSettings?.returnWindowDays || 7}-Day Doorstep Return & Exchange Policy`
+                    : 'Return Policy Applies (Subject to Store Terms)'}
+                </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <ShieldCheck size={18} color="var(--color-gold-dark)" />
