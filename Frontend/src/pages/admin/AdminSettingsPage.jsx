@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Sliders, Save, RefreshCw, Truck, RotateCcw, CreditCard, Store, CheckCircle } from 'lucide-react';
 import { settingApi } from '../../api/settingApi';
 import { useToast } from '../../context/ToastContext';
+import { useSettings } from '../../context/SettingsContext';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Spinner from '../../components/common/Spinner';
 
 export const AdminSettingsPage = () => {
   const { success, error: toastError } = useToast();
+  const { fetchSettings } = useSettings();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -22,8 +24,9 @@ export const AdminSettingsPage = () => {
       pincode: '',
     },
     shippingSettings: {
-      defaultShippingCharge: 0,
-      freeShippingAbove: 0,
+      freeShippingEnabled: true,
+      defaultShippingCharge: 150,
+      freeShippingAbove: 5000,
     },
     returnSettings: {
       returnWindowDays: 7,
@@ -52,8 +55,9 @@ export const AdminSettingsPage = () => {
             pincode: data.address?.pincode || '',
           },
           shippingSettings: {
-            defaultShippingCharge: data.shippingSettings?.defaultShippingCharge ?? 0,
-            freeShippingAbove: data.shippingSettings?.freeShippingAbove ?? 0,
+            freeShippingEnabled: data.shippingSettings?.freeShippingEnabled ?? true,
+            defaultShippingCharge: data.shippingSettings?.defaultShippingCharge ?? 150,
+            freeShippingAbove: data.shippingSettings?.freeShippingAbove ?? 5000,
           },
           returnSettings: {
             returnWindowDays: data.returnSettings?.returnWindowDays ?? 7,
@@ -88,6 +92,7 @@ export const AdminSettingsPage = () => {
         phone: formData.phone,
         address: formData.address,
         shippingSettings: {
+          freeShippingEnabled: Boolean(formData.shippingSettings.freeShippingEnabled),
           defaultShippingCharge: Number(formData.shippingSettings.defaultShippingCharge),
           freeShippingAbove: Number(formData.shippingSettings.freeShippingAbove),
         },
@@ -102,6 +107,7 @@ export const AdminSettingsPage = () => {
           razorpayEnabled: Boolean(formData.paymentSettings.razorpayEnabled),
         },
       });
+      await fetchSettings();
       success('Store settings saved and updated successfully!');
     } catch (err) {
       toastError(err.response?.data?.message || 'Failed to save settings');
@@ -211,21 +217,45 @@ export const AdminSettingsPage = () => {
                   shippingSettings: { ...formData.shippingSettings, defaultShippingCharge: e.target.value },
                 })
               }
-              placeholder="0 (Free) or e.g. 150"
+              placeholder="e.g. 150 (0 for standard free shipping)"
             />
-            <Input
-              label="Complimentary Free Shipping On Orders Above (₹)"
-              type="number"
-              min="0"
-              value={formData.shippingSettings.freeShippingAbove}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  shippingSettings: { ...formData.shippingSettings, freeShippingAbove: e.target.value },
-                })
-              }
-              placeholder="e.g. 5000 (0 means all orders free)"
-            />
+
+            {formData.shippingSettings.freeShippingEnabled ? (
+              <Input
+                label="Complimentary Free Shipping On Orders Above (₹)"
+                type="number"
+                min="1"
+                value={formData.shippingSettings.freeShippingAbove}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    shippingSettings: { ...formData.shippingSettings, freeShippingAbove: e.target.value },
+                  })
+                }
+                placeholder="e.g. 5000"
+              />
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', padding: '0.75rem', backgroundColor: '#F9FAFB', borderRadius: 'var(--radius-sm)', border: '1px solid #E5E7EB', color: '#6B7280', fontSize: '0.85rem' }}>
+                Free shipping threshold is disabled. Standard shipping rate will apply to all orders.
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid #F3F4F6' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--color-primary-dark)', fontWeight: 500 }}>
+              <input
+                type="checkbox"
+                checked={formData.shippingSettings.freeShippingEnabled}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    shippingSettings: { ...formData.shippingSettings, freeShippingEnabled: e.target.checked },
+                  })
+                }
+                style={{ width: '1.15rem', height: '1.15rem', accentColor: 'var(--color-primary)' }}
+              />
+              <span>Offer Complimentary Free Shipping when order total reaches threshold amount</span>
+            </label>
           </div>
         </div>
 

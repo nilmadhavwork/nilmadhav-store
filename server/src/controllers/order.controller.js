@@ -73,10 +73,9 @@ const createOrder = async (req, res, next) => {
 
     // Shipping cost from Settings (flat rate + free-shipping threshold)
     const settings = await Setting.getSettings();
-    const shippingCost =
-      subtotal >= settings.shippingSettings.freeShippingAbove
-        ? 0
-        : settings.shippingSettings.defaultShippingCharge;
+    const { freeShippingEnabled = true, freeShippingAbove = 5000, defaultShippingCharge = 150 } = settings.shippingSettings || {};
+    const isFreeShipping = freeShippingEnabled && freeShippingAbove > 0 && subtotal >= freeShippingAbove;
+    const shippingCost = isFreeShipping ? 0 : defaultShippingCharge;
 
     const discount = 0; // no coupon system yet — placeholder for future
     const totalAmount = subtotal + shippingCost - discount;

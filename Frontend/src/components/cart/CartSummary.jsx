@@ -2,18 +2,32 @@ import React from 'react';
 import { ShieldCheck, Truck, ArrowRight } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
 import Button from '../common/Button';
+import { useSettings } from '../../context/SettingsContext';
 
 export const CartSummary = ({
   subtotal = 0,
-  shippingCost = 0,
-  freeShippingThreshold = 5000,
+  shippingCost,
+  freeShippingThreshold,
   onCheckout,
   checkoutDisabled = false,
   isCheckoutPage = false,
 }) => {
-  const calculatedShipping = subtotal >= freeShippingThreshold ? 0 : shippingCost || (subtotal > 0 ? 150 : 0);
+  const { shippingSettings } = useSettings();
+
+  const freeShippingEnabled = shippingSettings?.freeShippingEnabled ?? true;
+
+  const threshold = freeShippingThreshold !== undefined
+    ? freeShippingThreshold
+    : (shippingSettings?.freeShippingAbove ?? 5000);
+
+  const defaultShipping = shippingCost !== undefined
+    ? shippingCost
+    : (shippingSettings?.defaultShippingCharge ?? 150);
+
+  const isFreeShipping = freeShippingEnabled && threshold > 0 && subtotal >= threshold;
+  const calculatedShipping = subtotal > 0 ? (isFreeShipping ? 0 : defaultShipping) : 0;
   const total = subtotal + calculatedShipping;
-  const differenceToFree = freeShippingThreshold - subtotal;
+  const differenceToFree = threshold - subtotal;
 
   return (
     <div className="order-summary-box">
@@ -22,7 +36,7 @@ export const CartSummary = ({
       </h3>
 
       {/* Free Shipping Progress Indicator */}
-      {subtotal > 0 && subtotal < freeShippingThreshold && (
+      {subtotal > 0 && freeShippingEnabled && threshold > 0 && subtotal < threshold && (
         <div style={{ backgroundColor: 'var(--color-gold-bg)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.25rem', border: '1px solid var(--color-gold-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--color-gold-dark)', fontWeight: 600, marginBottom: '0.4rem' }}>
             <Truck size={16} />
@@ -32,7 +46,7 @@ export const CartSummary = ({
             <div
               style={{
                 height: '100%',
-                width: `${Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100))}%`,
+                width: `${Math.min(100, Math.round((subtotal / threshold) * 100))}%`,
                 backgroundColor: 'var(--color-gold)',
                 transition: 'width 300ms ease',
               }}
@@ -41,7 +55,7 @@ export const CartSummary = ({
         </div>
       )}
 
-      {subtotal >= freeShippingThreshold && subtotal > 0 && (
+      {subtotal > 0 && freeShippingEnabled && isFreeShipping && (
         <div style={{ backgroundColor: 'var(--color-success-bg)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.25rem', border: '1px solid var(--color-success-border)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--color-success)', fontWeight: 600 }}>
           <Truck size={16} />
           <span>You have unlocked Complimentary Pan-India Delivery!</span>

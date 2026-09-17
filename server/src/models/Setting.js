@@ -13,8 +13,9 @@ const settingSchema = new mongoose.Schema(
     },
 
     shippingSettings: {
-      freeShippingAbove: { type: Number, default: 0 },
-      defaultShippingCharge: { type: Number, default: 0 },
+      freeShippingEnabled: { type: Boolean, default: true },
+      freeShippingAbove: { type: Number, default: 5000 },
+      defaultShippingCharge: { type: Number, default: 150 },
     },
 
     returnSettings: {
@@ -41,7 +42,10 @@ const settingSchema = new mongoose.Schema(
 settingSchema.statics.getSettings = async function () {
   let settings = await this.findOne();
   if (!settings) {
-    settings = await this.create({ storeName: "My Saree Store" });
+    settings = await this.create({
+      storeName: "Nilmadhav Sarees",
+      shippingSettings: { freeShippingEnabled: true, freeShippingAbove: 5000, defaultShippingCharge: 150 },
+    });
   }
   return settings;
 };

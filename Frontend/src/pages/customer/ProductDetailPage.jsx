@@ -20,12 +20,15 @@ import Button from '../../components/common/Button';
 import Spinner from '../../components/common/Spinner';
 import { formatCurrency, calculateDiscount } from '../../utils/formatters';
 
+import { useSettings } from '../../context/SettingsContext';
+
 export const ProductDetailPage = () => {
   const { id: slugOrId } = useParams();
   const navigate = useNavigate();
 
   const { addToCart, loading: cartLoading } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { shippingSettings, returnSettings } = useSettings();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -339,11 +342,17 @@ export const ProductDetailPage = () => {
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <Truck size={18} color="var(--color-gold-dark)" />
-                <span>Complimentary Shipping across India on orders above ₹5,000</span>
+                <span>
+                  {shippingSettings?.freeShippingEnabled && shippingSettings?.freeShippingAbove > 0
+                    ? `Complimentary Shipping across India on orders above ${formatCurrency(shippingSettings.freeShippingAbove)}`
+                    : shippingSettings?.defaultShippingCharge > 0
+                    ? `Standard Flat-Rate Shipping across India (${formatCurrency(shippingSettings.defaultShippingCharge)})`
+                    : 'Complimentary Free Shipping across India on all orders'}
+                </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <RotateCcw size={18} color="var(--color-gold-dark)" />
-                <span>7-Day Doorstep Return & Exchange Policy</span>
+                <span>{returnSettings?.returnWindowDays || 7}-Day Doorstep Return & Exchange Policy</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <ShieldCheck size={18} color="var(--color-gold-dark)" />
