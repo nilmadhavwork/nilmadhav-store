@@ -8,8 +8,8 @@ export const productApi = {
   },
 
   // GET /api/products/:slug
-  getBySlug: async (slug) => {
-    const response = await apiClient.get(`/products/${slug}`);
+  getBySlug: async (slug, params = {}) => {
+    const response = await apiClient.get(`/products/${slug}`, { params });
     return response.data;
   },
 

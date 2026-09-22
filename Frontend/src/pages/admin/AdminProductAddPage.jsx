@@ -32,6 +32,7 @@ export const AdminProductAddPage = () => {
     blouseIncluded: true,
     blouseColor: '',
     careInstructions: 'Dry clean only',
+    isActive: true,
   });
   const [discountAmount, setDiscountAmount] = useState('');
 
@@ -164,6 +165,7 @@ export const AdminProductAddPage = () => {
       data.append('blouseIncluded', formData.blouseIncluded);
       data.append('blouseColor', formData.blouseColor);
       data.append('careInstructions', formData.careInstructions);
+      data.append('isActive', formData.isActive);
 
       // Reorder so primary file is first in FormData array
       const sortedPreviews = [...filePreviews].sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
@@ -201,6 +203,30 @@ export const AdminProductAddPage = () => {
       </div>
 
       <form onSubmit={handleSubmit}>
+        {/* Product Status & Visibility */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: 'var(--radius-md)', padding: '1.5rem 2rem', border: '1px solid #E5E7EB', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h3 style={{ fontSize: '1.05rem', color: '#111827', marginBottom: '0.2rem' }}>
+              Product Visibility & Status
+            </h3>
+            <p style={{ color: '#6B7280', fontSize: '0.85rem' }}>
+              {formData.isActive ? 'Product will be ACTIVE and visible to customers on storefront.' : 'Product will be INACTIVE and hidden from customers.'}
+            </p>
+          </div>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', backgroundColor: formData.isActive ? '#ECFDF5' : '#FEF2F2', padding: '0.6rem 1.2rem', borderRadius: 'var(--radius-sm)', border: formData.isActive ? '1px solid #A7F3D0' : '1px solid #FECACA' }}>
+            <input
+              type="checkbox"
+              checked={formData.isActive}
+              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+              style={{ accentColor: formData.isActive ? '#059669' : '#DC2626', width: '20px', height: '20px' }}
+            />
+            <span style={{ fontWeight: 600, color: formData.isActive ? '#065F46' : '#991B1B', fontSize: '0.95rem' }}>
+              {formData.isActive ? 'Active (Published)' : 'Inactive (Draft / Hidden)'}
+            </span>
+          </label>
+        </div>
+
         {/* SECTION 1: Core Information */}
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: 'var(--radius-md)', padding: '2rem', border: '1px solid #E5E7EB', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
           <h3 style={{ fontSize: '1.15rem', color: '#111827', marginBottom: '1.25rem' }}>

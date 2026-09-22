@@ -17,7 +17,7 @@ export const AdminProductsPage = () => {
   const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await productApi.getAll({ limit: 50 });
+      const res = await productApi.getAll({ limit: 100, includeInactive: 'true' });
       setProducts(res?.products || []);
     } catch (err) {
       console.warn('Failed to load products:', err.message);
@@ -30,19 +30,33 @@ export const AdminProductsPage = () => {
     loadProducts();
   }, [loadProducts]);
 
-  const handleDeleteProduct = async (id, name) => {
-    if (window.confirm(`Are you sure you want to deactivate "${name}"? It will be removed from customer listings.`)) {
+  const handleToggleActive = async (id, name, currentStatus) => {
+    const actionText = currentStatus ? 'deactivate' : 'activate';
+    const confirmMessage = currentStatus
+      ? `Are you sure you want to deactivate "${name}"? It will be hidden from customer storefront.`
+      : `Are you sure you want to activate "${name}"? It will become visible on the storefront.`;
+
+    if (window.confirm(confirmMessage)) {
       try {
-        await productApi.delete(id);
-        success(`Product "${name}" deactivated.`);
+        if (currentStatus) {
+          await productApi.delete(id);
+        } else {
+          await productApi.update(id, { isActive: true }, false);
+        }
+        success(`Product "${name}" ${actionText}d successfully.`);
         loadProducts();
       } catch (err) {
-        toastError(err.response?.data?.message || 'Failed to deactivate product');
+        toastError(err.response?.data?.message || `Failed to ${actionText} product`);
       }
     }
   };
 
+  const [statusFilter, setStatusFilter] = useState('all');
+
   const filteredProducts = products.filter((p) => {
+    if (statusFilter === 'active' && !p.isActive) return false;
+    if (statusFilter === 'inactive' && p.isActive) return false;
+
     if (!search.trim()) return true;
     const query = search.toLowerCase();
     return (
@@ -71,7 +85,7 @@ export const AdminProductsPage = () => {
             Saree Catalog & Stock
           </h1>
           <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>
-            Manage inventory counts, pricing, artisanal details, and image galleries.
+            Manage inventory counts, pricing, artisanal details, visibility, and image galleries.
           </p>
         </div>
 
@@ -95,8 +109,21 @@ export const AdminProductsPage = () => {
           />
         </div>
 
-        <div style={{ fontSize: '0.85rem', color: '#6B7280' }}>
-          Showing <strong>{filteredProducts.length}</strong> of <strong>{products.length}</strong> sarees
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <select
+            className="form-select"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            style={{ fontSize: '0.85rem', padding: '0.45rem 0.8rem', width: 'auto' }}
+          >
+            <option value="all">All Statuses ({products.length})</option>
+            <option value="active">Active Only ({products.filter((p) => p.isActive).length})</option>
+            <option value="inactive">Inactive Only ({products.filter((p) => !p.isActive).length})</option>
+          </select>
+
+          <div style={{ fontSize: '0.85rem', color: '#6B7280' }}>
+            Showing <strong>{filteredProducts.length}</strong> sarees
+          </div>
         </div>
       </div>
 
@@ -190,11 +217,14 @@ export const AdminProductsPage = () => {
                         </Link>
                         <button
                           className="btn btn-secondary btn-sm"
-                          style={{ padding: '0.35rem 0.55rem', color: 'var(--color-danger)' }}
-                          onClick={() => handleDeleteProduct(p._id, p.name)}
-                          title="Deactivate product"
+                          style={{
+                            padding: '0.35rem 0.55rem',
+                            color: p.isActive ? 'var(--color-danger)' : 'var(--color-success)',
+                          }}
+                          onClick={() => handleToggleActive(p._id, p.name, p.isActive)}
+                          title={p.isActive ? 'Deactivate product' : 'Activate product'}
                         >
-                          <Trash2 size={14} />
+                          {p.isActive ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
                         </button>
                       </div>
                     </td>

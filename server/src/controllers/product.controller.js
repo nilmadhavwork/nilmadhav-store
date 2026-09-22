@@ -95,11 +95,16 @@ const getProducts = async (req, res, next) => {
       minPrice,
       maxPrice,
       search,
+      includeInactive,
       page = 1,
       limit = 20,
     } = req.query;
 
-    const filter = { isActive: true };
+    const filter = {};
+    if (includeInactive !== "true") {
+      filter.isActive = true;
+    }
+
     if (category) filter.categoryId = category;
     if (fabric) filter.fabric = new RegExp(fabric, "i");
     if (color) filter.color = new RegExp(color, "i");
@@ -132,10 +137,21 @@ const getProducts = async (req, res, next) => {
 // @route GET /api/products/:slug (public)
 const getProductBySlug = async (req, res, next) => {
   try {
-    const product = await Product.findOne({
-      slug: req.params.slug,
-      isActive: true,
-    }).populate("categoryId", "name slug");
+    const filter = { slug: req.params.slug };
+    if (req.query.includeInactive !== "true") {
+      filter.isActive = true;
+    }
+
+    let product = await Product.findOne(filter).populate("categoryId", "name slug");
+
+    if (!product && req.params.slug.match(/^[0-9a-fA-F]{24}$/)) {
+      const idFilter = { _id: req.params.slug };
+      if (req.query.includeInactive !== "true") {
+        idFilter.isActive = true;
+      }
+      product = await Product.findOne(idFilter).populate("categoryId", "name slug");
+    }
+
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.json(product);
   } catch (error) {
@@ -147,12 +163,26 @@ const getProductBySlug = async (req, res, next) => {
 const updateProduct = async (req, res, next) => {
   try {
     const updateData = { ...req.body };
-    if (updateData.name) {
-      updateData.slug = slugify(updateData.name, { lower: true, strict: true });
-    }
-
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
+
+    if (updateData.name && updateData.name.trim() !== product.name) {
+      let newSlug = slugify(updateData.name, { lower: true, strict: true });
+      const existingProduct = await Product.findOne({
+        slug: newSlug,
+        _id: { $ne: req.params.id },
+      });
+      if (existingProduct) {
+        newSlug = `${newSlug}-${Date.now().toString().slice(-4)}`;
+      }
+      updateData.slug = newSlug;
+    } else {
+      delete updateData.slug;
+    }
+
+    if (updateData.isActive !== undefined) {
+      updateData.isActive = updateData.isActive === 'true' || updateData.isActive === true;
+    }
 
     if (updateData.discountPrice !== undefined) {
       const effectivePrice = Number(updateData.price || product.price);

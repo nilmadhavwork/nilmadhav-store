@@ -34,6 +34,7 @@ export const AdminProductEditPage = () => {
     blouseIncluded: false,
     blouseColor: '',
     careInstructions: '',
+    isActive: true,
   });
   const [discountAmount, setDiscountAmount] = useState('');
 
@@ -81,11 +82,19 @@ export const AdminProductEditPage = () => {
         setLoading(true);
         const [cats, prodList] = await Promise.all([
           categoryApi.getAll(),
-          productApi.getAll({ limit: 100 }),
+          productApi.getAll({ limit: 100, includeInactive: 'true' }),
         ]);
         setCategories(cats || []);
 
-        const found = prodList?.products?.find((p) => p._id === id || p.slug === id);
+        let found = prodList?.products?.find((p) => p._id === id || p.slug === id);
+        if (!found) {
+          try {
+            found = await productApi.getBySlug(id, { includeInactive: 'true' });
+          } catch (e) {
+            // fallback
+          }
+        }
+
         if (found) {
           const hasDisc = found.discountPrice && Number(found.discountPrice) > 0 && Number(found.discountPrice) < Number(found.price);
           const discAmt = hasDisc ? String(Number(found.price) - Number(found.discountPrice)) : '';
@@ -105,6 +114,7 @@ export const AdminProductEditPage = () => {
             blouseIncluded: Boolean(found.blouseIncluded),
             blouseColor: found.blouseColor || '',
             careInstructions: found.careInstructions || '',
+            isActive: found.isActive !== false,
           });
           setExistingImages(found.images || []);
         } else {
@@ -224,6 +234,30 @@ export const AdminProductEditPage = () => {
       </div>
 
       <form onSubmit={handleSubmit}>
+        {/* Product Status & Visibility */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: 'var(--radius-md)', padding: '1.5rem 2rem', border: '1px solid #E5E7EB', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h3 style={{ fontSize: '1.05rem', color: '#111827', marginBottom: '0.2rem' }}>
+              Product Visibility & Status
+            </h3>
+            <p style={{ color: '#6B7280', fontSize: '0.85rem' }}>
+              {formData.isActive ? 'Product is ACTIVE and visible to customers on storefront.' : 'Product is INACTIVE and hidden from customers on storefront.'}
+            </p>
+          </div>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', backgroundColor: formData.isActive ? '#ECFDF5' : '#FEF2F2', padding: '0.6rem 1.2rem', borderRadius: 'var(--radius-sm)', border: formData.isActive ? '1px solid #A7F3D0' : '1px solid #FECACA' }}>
+            <input
+              type="checkbox"
+              checked={formData.isActive}
+              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+              style={{ accentColor: formData.isActive ? '#059669' : '#DC2626', width: '20px', height: '20px' }}
+            />
+            <span style={{ fontWeight: 600, color: formData.isActive ? '#065F46' : '#991B1B', fontSize: '0.95rem' }}>
+              {formData.isActive ? 'Active (Published)' : 'Inactive (Hidden)'}
+            </span>
+          </label>
+        </div>
+
         {/* Core Info */}
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: 'var(--radius-md)', padding: '2rem', border: '1px solid #E5E7EB', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
           <h3 style={{ fontSize: '1.15rem', color: '#111827', marginBottom: '1.25rem' }}>
