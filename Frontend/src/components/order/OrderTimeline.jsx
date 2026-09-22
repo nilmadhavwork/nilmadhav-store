@@ -58,7 +58,7 @@ export const OrderTimeline = ({ orderStatus, shipping = {} }) => {
   const currentIndex = statusHierarchy[orderStatus] ?? 0;
 
   return (
-    <div style={{ margin: '2rem 0' }}>
+    <div className="timeline-wrapper" style={{ margin: '2rem 0' }}>
       <div className="timeline-container">
         {/* Continuous background track */}
         <div className="timeline-line" />

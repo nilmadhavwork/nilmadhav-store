@@ -652,6 +652,13 @@
 }
 
 /* --- Order Timeline (Shiprocket) --- */
+.timeline-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .timeline-container {
   display: flex;
   align-items: center;
@@ -781,11 +788,17 @@
     height: 85px;
     flex-shrink: 0;
   }
-  .timeline-container {
+  .timeline-wrapper {
+    width: 100%;
+    max-width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 1rem;
-    min-width: 460px;
+    padding-bottom: 0.5rem;
+  }
+  .timeline-container {
+    min-width: 480px;
+    padding: 0 0.5rem;
+    margin: 1.25rem 0;
   }
   .category-grid {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));

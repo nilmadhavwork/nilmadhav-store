@@ -248,6 +248,8 @@
   border-radius: var(--radius-md);
   border: 1px solid #E5E7EB;
   overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
