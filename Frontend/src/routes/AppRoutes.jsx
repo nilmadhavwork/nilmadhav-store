@@ -22,6 +22,8 @@ import ReturnsPage from '../pages/customer/ReturnsPage';
 import ProfilePage from '../pages/customer/ProfilePage';
 import LoginPage from '../pages/customer/LoginPage';
 import RegisterPage from '../pages/customer/RegisterPage';
+import PrivacyPolicyPage from '../pages/customer/PrivacyPolicyPage';
+import TermsPage from '../pages/customer/TermsPage';
 import NotFoundPage from '../pages/customer/NotFoundPage';
 
 // Admin Pages
@@ -49,6 +51,8 @@ export const AppRoutes = () => {
         <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms-and-conditions" element={<TermsPage />} />
 
         {/* Protected Customer Routes */}
         <Route

@@ -74,7 +74,7 @@ export const Footer = () => {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Mail size={16} color="var(--color-gold)" />
-                <span>care@nilmadhavsarees.com</span>
+                <span>nilmadhav.work@gmail.com</span>
               </div>
             </div>
           </div>
@@ -114,10 +114,10 @@ export const Footer = () => {
               Store Policies
             </h4>
             <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', fontSize: '0.9rem' }}>
+              <li><Link to="/privacy-policy" style={{ color: '#D4C9BF' }}>Privacy Policy</Link></li>
+              <li><Link to="/terms-and-conditions" style={{ color: '#D4C9BF' }}>Terms & Conditions</Link></li>
               <li style={{ color: '#D4C9BF' }}>Pan-India Delivery in 3-5 Days</li>
               <li style={{ color: '#D4C9BF' }}>Silk Mark Authentic Guarantee</li>
-              <li style={{ color: '#D4C9BF' }}>Zero Tamper Packaging</li>
-              <li style={{ color: '#D4C9BF' }}>Dry Clean Care Recommendations</li>
               <li>
                 <Link to="/admin/login" style={{ color: 'var(--color-gold)', fontSize: '0.85rem', fontWeight: 600 }}>
                   Admin Staff Portal &rarr;
@@ -133,9 +133,9 @@ export const Footer = () => {
             &copy; {new Date().getFullYear()} Nilmadhav Sarees. Handcrafted with reverence in India. All rights reserved.
           </div>
           <div style={{ display: 'flex', gap: '1.5rem' }}>
-            <span>Privacy Policy</span>
-            <span>Terms of Service</span>
-            <span>Shipping Policy</span>
+            <Link to="/privacy-policy" style={{ color: '#9E9389', textDecoration: 'none' }}>Privacy Policy</Link>
+            <Link to="/terms-and-conditions" style={{ color: '#9E9389', textDecoration: 'none' }}>Terms & Conditions</Link>
+            <Link to="/returns" style={{ color: '#9E9389', textDecoration: 'none' }}>Return Policy</Link>
           </div>
         </div>
       </div>
