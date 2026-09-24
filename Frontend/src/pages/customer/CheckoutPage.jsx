@@ -194,13 +194,13 @@ export const CheckoutPage = () => {
     <div className="section">
       <div className="container">
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem' }}>
+        <div className="checkout-page-header">
           <Link to="/cart" className="btn btn-secondary btn-sm">
             <ArrowLeft size={16} />
             <span>Return to Bag</span>
           </Link>
           <div>
-            <h1 style={{ fontSize: '2rem', color: 'var(--color-primary-dark)' }}>
+            <h1 className="checkout-page-title">
               Secure Checkout
             </h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--color-success)' }}>
@@ -225,13 +225,11 @@ export const CheckoutPage = () => {
               selectedMethod={paymentMethod}
               onSelectMethod={setPaymentMethod}
             />
-
-            <div style={{ display: 'none' /* mobile summary button helper */ }} />
           </div>
 
           {/* Right Column: Order Review & Confirmation */}
           <div>
-            <div style={{ position: 'sticky', top: '100px' }}>
+            <div className="checkout-summary-sticky">
               <CartSummary
                 subtotal={cartSubtotal}
                 isCheckoutPage
