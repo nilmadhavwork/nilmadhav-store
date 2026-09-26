@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RotateCcw, RefreshCw, DollarSign, Eye, User, ShoppingBag, Truck, Edit } from 'lucide-react';
+import { RotateCcw, RefreshCw, DollarSign, Eye, User, ShoppingBag, Truck, Edit, MapPin } from 'lucide-react';
 import { returnApi } from '../../api/returnApi';
 import { refundApi } from '../../api/refundApi';
 import { useToast } from '../../context/ToastContext';
@@ -350,7 +350,7 @@ export const AdminReturnsPage = () => {
                 <div className="refund-field-item">
                   <div className="refund-field-label">Customer Name</div>
                   <div className="refund-field-value">
-                    {detailReturn.userId?.name || 'Customer'}
+                    {detailReturn.userId?.name || detailReturn.orderId?.shippingAddress?.fullName || 'Customer'}
                   </div>
                 </div>
 
@@ -363,12 +363,59 @@ export const AdminReturnsPage = () => {
                   </div>
                 )}
 
-                {detailReturn.userId?.phone && (
+                {(detailReturn.userId?.phone || detailReturn.orderId?.shippingAddress?.phone) && (
                   <div className="refund-field-item">
-                    <div className="refund-field-label">Phone</div>
+                    <div className="refund-field-label">Phone Contact</div>
                     <div className="refund-field-value" style={{ fontSize: '0.825rem' }}>
-                      {detailReturn.userId.phone}
+                      {detailReturn.userId?.phone || detailReturn.orderId?.shippingAddress?.phone}
                     </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Customer Pickup Address */}
+              <div className="refund-detail-card" style={{ gridColumn: '1 / -1' }}>
+                <div className="refund-card-title">
+                  <MapPin size={14} />
+                  <span>Customer Pickup Address</span>
+                </div>
+
+                {detailReturn.orderId?.shippingAddress ? (
+                  <div>
+                    <div style={{ fontWeight: 600, color: 'var(--color-primary-dark)', marginBottom: '0.35rem', fontSize: '0.875rem' }}>
+                      {detailReturn.orderId.shippingAddress.fullName || detailReturn.userId?.name || 'Customer'}
+                      {(detailReturn.orderId.shippingAddress.phone || detailReturn.userId?.phone) && (
+                        <span style={{ fontWeight: 400, color: '#4B5563', marginLeft: '0.5rem', fontSize: '0.8rem' }}>
+                          (Phone: {detailReturn.orderId.shippingAddress.phone || detailReturn.userId?.phone})
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ backgroundColor: '#FAF5EB', border: '1px solid var(--color-gold-border)', borderRadius: '4px', padding: '0.75rem 0.85rem', fontSize: '0.85rem', color: '#1F2937', lineHeight: 1.5 }}>
+                      <div style={{ fontWeight: 600 }}>
+                        {[
+                          detailReturn.orderId.shippingAddress.addressLine1,
+                          detailReturn.orderId.shippingAddress.addressLine2,
+                          detailReturn.orderId.shippingAddress.street,
+                          detailReturn.orderId.shippingAddress.addressLine,
+                          detailReturn.orderId.shippingAddress.landmark,
+                        ].filter(Boolean).join(', ') || 'Street address not specified'}
+                      </div>
+                      <div>
+                        {[
+                          detailReturn.orderId.shippingAddress.city,
+                          detailReturn.orderId.shippingAddress.state,
+                        ].filter(Boolean).join(', ')}
+                        {detailReturn.orderId.shippingAddress.pincode ? ` - ${detailReturn.orderId.shippingAddress.pincode}` : ''}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '0.2rem' }}>
+                        {detailReturn.orderId.shippingAddress.country || 'India'}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.825rem', color: '#9CA3AF', fontStyle: 'italic' }}>
+                    Pickup address details not available for this return request.
                   </div>
                 )}
               </div>

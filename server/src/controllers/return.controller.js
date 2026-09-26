@@ -127,7 +127,7 @@ const getAllReturns = async (req, res, next) => {
     const filter = status ? { status } : {};
     const returns = await Return.find(filter)
       .populate("userId", "name email phone")
-      .populate("orderId", "orderNumber totalAmount")
+      .populate("orderId", "orderNumber totalAmount shippingAddress")
       .sort({ createdAt: -1 });
     res.json(returns);
   } catch (error) {
