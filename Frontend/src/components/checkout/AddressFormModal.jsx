@@ -89,7 +89,7 @@ export const AddressFormModal = ({
       maxWidth="560px"
     >
       <form onSubmit={handleSubmit}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="address-form-row-2">
           <Input
             label="Full Name"
             required
@@ -125,7 +125,7 @@ export const AddressFormModal = ({
           placeholder="e.g. Near Ring Road Temple"
         />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1fr', gap: '1rem' }}>
+        <div className="address-form-row-3">
           <Input
             label="City"
             required
@@ -152,7 +152,7 @@ export const AddressFormModal = ({
           />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.25rem' }}>
+        <div className="address-form-row-2" style={{ marginTop: '0.25rem' }}>
           <div className="form-group">
             <label className="form-label">Address Type</label>
             <select

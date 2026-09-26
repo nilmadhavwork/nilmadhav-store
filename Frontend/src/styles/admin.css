@@ -17,10 +17,11 @@
   flex-direction: column;
   flex-shrink: 0;
   border-right: 1px solid rgba(197, 160, 89, 0.15);
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  bottom: 0;
   height: 100vh;
-  align-self: flex-start;
   z-index: 100;
 }
 
@@ -129,6 +130,8 @@
   flex-direction: column;
   min-width: 0;
   overflow-x: hidden;
+  margin-left: 260px;
+  width: calc(100% - 260px);
 }
 
 .admin-topbar {
@@ -248,6 +251,8 @@
   border-radius: var(--radius-md);
   border: 1px solid #E5E7EB;
   overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
@@ -387,6 +392,11 @@
 
   .admin-sidebar.open {
     transform: translateX(0);
+  }
+
+  .admin-main {
+    margin-left: 0;
+    width: 100%;
   }
 
   .admin-sidebar-close {

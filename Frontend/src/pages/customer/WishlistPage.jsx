@@ -54,6 +54,8 @@ export const WishlistPage = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "1rem",
             marginBottom: "2.5rem",
             borderBottom: "1px solid var(--color-border)",
             paddingBottom: "1rem",

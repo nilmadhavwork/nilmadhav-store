@@ -30,6 +30,18 @@ export const AdminLayout = () => {
 
   const closeSidebar = () => setMobileSidebarOpen(false);
 
+  // Lock body scroll when mobile admin drawer is open
+  React.useEffect(() => {
+    if (mobileSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileSidebarOpen]);
+
   return (
     <div className="admin-layout">
       {/* Mobile Sidebar Backdrop Overlay */}

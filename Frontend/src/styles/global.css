@@ -12,6 +12,12 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  touch-action: manipulation;
 }
 
 body {
@@ -20,14 +26,24 @@ body {
   color: var(--color-text);
   line-height: 1.6;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  position: relative;
   display: flex;
   flex-direction: column;
+  touch-action: manipulation;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 #root {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* Typography Hierarchy */
@@ -183,5 +199,62 @@ ul, ol {
   .section {
     padding-top: 2.75rem;
     padding-bottom: 2.75rem;
+  }
+}
+
+/* --- Universal Mobile Responsiveness & Strict Anti-Zoom Rules --- */
+@media (max-width: 768px) {
+  html, body, #root {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Prevent iOS Safari and Android Chrome from triggering auto-zoom on field focus */
+  input,
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  select,
+  textarea,
+  .form-input,
+  .form-select,
+  .form-textarea {
+    font-size: 16px !important;
+    max-width: 100% !important;
+  }
+
+  /* Prevent double-tap zoom delay or unintended zooming on interactive elements */
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  /* Ensure media and elements never exceed parent containers or cause horizontal scroll */
+  img, svg, video, canvas {
+    max-width: 100% !important;
+    height: auto;
+  }
+
+  .container,
+  .section,
+  .navbar,
+  .navbar-inner,
+  .hero-section,
+  .product-detail-layout,
+  .cart-layout,
+  .checkout-layout,
+  .admin-layout,
+  .admin-main,
+  .admin-content,
+  .admin-topbar {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 }
