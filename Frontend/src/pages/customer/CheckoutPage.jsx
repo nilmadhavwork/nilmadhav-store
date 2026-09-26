@@ -7,6 +7,7 @@ import { paymentApi } from '../../api/paymentApi';
 import { useCart } from '../../context/CartContext';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 import AddressSelector from '../../components/checkout/AddressSelector';
 import AddressFormModal from '../../components/checkout/AddressFormModal';
 import PaymentSelector from '../../components/checkout/PaymentSelector';
@@ -19,14 +20,34 @@ export const CheckoutPage = () => {
   const { user, isAuthenticated } = useAuth();
   const { items, cartSubtotal, fetchCart } = useCart();
   const { success, error, info } = useToast();
+  const { codSettings, paymentSettings } = useSettings();
+
+  const isCodEnabled = codSettings?.enabled ?? true;
+  const isRazorpayEnabled = paymentSettings?.razorpayEnabled ?? true;
 
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('COD');
+  const [paymentMethod, setPaymentMethod] = useState(() => {
+    if (isCodEnabled) return 'COD';
+    if (isRazorpayEnabled) return 'RAZORPAY';
+    return '';
+  });
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [savingAddress, setSavingAddress] = useState(false);
+
+  // Sync selected payment method if settings update or current method gets disabled
+  useEffect(() => {
+    if (paymentMethod === 'COD' && !isCodEnabled) {
+      setPaymentMethod(isRazorpayEnabled ? 'RAZORPAY' : '');
+    } else if (paymentMethod === 'RAZORPAY' && !isRazorpayEnabled) {
+      setPaymentMethod(isCodEnabled ? 'COD' : '');
+    } else if (!paymentMethod) {
+      if (isCodEnabled) setPaymentMethod('COD');
+      else if (isRazorpayEnabled) setPaymentMethod('RAZORPAY');
+    }
+  }, [isCodEnabled, isRazorpayEnabled, paymentMethod]);
 
   // Load customer addresses
   useEffect(() => {
@@ -242,9 +263,9 @@ export const CheckoutPage = () => {
                   size="lg"
                   onClick={handlePlaceOrder}
                   loading={placingOrder}
-                  disabled={placingOrder || !selectedAddressId || items.length === 0}
+                  disabled={placingOrder || !selectedAddressId || !paymentMethod || items.length === 0}
                 >
-                  {paymentMethod === 'COD' ? 'Confirm Cash on Delivery Order' : 'Proceed to Secure Payment'}
+                  {paymentMethod === 'COD' ? 'Confirm Cash on Delivery Order' : paymentMethod === 'RAZORPAY' ? 'Proceed to Secure Payment' : 'Payment Unavailable'}
                 </Button>
               </div>
 

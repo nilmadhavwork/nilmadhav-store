@@ -71,8 +71,19 @@ const createOrder = async (req, res, next) => {
       await product.save();
     }
 
-    // Shipping cost from Settings (flat rate + free-shipping threshold)
+    // Validate payment method against store settings
     const settings = await Setting.getSettings();
+    const isCodEnabled = settings.codSettings?.enabled ?? true;
+    const isRazorpayEnabled = settings.paymentSettings?.razorpayEnabled ?? true;
+
+    if (paymentMethod === "COD" && !isCodEnabled) {
+      return res.status(400).json({ message: "Cash on Delivery (COD) is currently disabled by the store." });
+    }
+    if (paymentMethod === "RAZORPAY" && !isRazorpayEnabled) {
+      return res.status(400).json({ message: "Razorpay Online Payment is currently disabled by the store." });
+    }
+
+    // Shipping cost from Settings (flat rate + free-shipping threshold)
     const { freeShippingEnabled = true, freeShippingAbove = 5000, defaultShippingCharge = 150 } = settings.shippingSettings || {};
     const isFreeShipping = freeShippingEnabled && freeShippingAbove > 0 && subtotal >= freeShippingAbove;
     const shippingCost = isFreeShipping ? 0 : defaultShippingCharge;
