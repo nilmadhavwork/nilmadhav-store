@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Plus, CheckCircle2, RefreshCw, Check, AlertCircle } from 'lucide-react';
+import { CreditCard, Plus, RefreshCw, Check, AlertCircle, Eye, User, Calendar, FileText } from 'lucide-react';
 import { refundApi } from '../../api/refundApi';
 import { returnApi } from '../../api/returnApi';
 import { useToast } from '../../context/ToastContext';
@@ -22,6 +22,9 @@ export const AdminRefundsPage = () => {
   const [processing, setProcessing] = useState(false);
   const [completingId, setCompletingId] = useState(null);
   const [initiatingId, setInitiatingId] = useState(null);
+
+  // Selected refund for details modal
+  const [detailRefund, setDetailRefund] = useState(null);
 
   const loadRefunds = async () => {
     try {
@@ -141,83 +144,101 @@ export const AdminRefundsPage = () => {
           </Button>
         </div>
       ) : (
-        <div className="admin-table-container">
+        <div className="admin-table-container refund-table-container">
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Refund #</th>
-                <th>Order Ref</th>
+                <th>Refund</th>
+                <th>Order</th>
                 <th>Customer</th>
-                <th>Reimbursement Amount</th>
-                <th>Mode</th>
-                <th>Reason</th>
-                <th>Scheduled / Disbursed Date</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Date</th>
                 <th>Status</th>
-                <th>Actions</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {refunds.map((ref) => {
-                const orderNum = ref.orderId?.orderNumber || (typeof ref.orderId === 'string' ? ref.orderId : 'N/A');
+                const refundNum = ref.refundNumber || ref._id || '';
+                const orderNum = ref.orderId?.orderNumber || (typeof ref.orderId === 'string' ? ref.orderId : (ref.orderId?._id || 'N/A'));
                 const customerName = ref.userId?.name || ref.userId?.email || 'Customer';
-                const isScheduledFuture = ref.scheduledAt && new Date() < new Date(ref.scheduledAt);
+                const customerEmail = ref.userId?.email && ref.userId?.name ? ref.userId.email : '';
+
+                // Compact truncation helpers
+                const truncatedRefund = refundNum.length > 14 ? `${refundNum.slice(0, 11)}...` : refundNum;
+                const truncatedOrder = orderNum.length > 13 ? `${orderNum.slice(0, 10)}...` : orderNum;
+
+                // Format Method String
+                const formattedMethod = ref.method === 'RAZORPAY'
+                  ? 'Razorpay'
+                  : ref.method === 'BANK_TRANSFER'
+                  ? 'Bank Transfer'
+                  : ref.method === 'UPI'
+                  ? 'UPI'
+                  : (ref.method || 'N/A');
+
+                // Status badge styling
+                const statusBadgeClass = ['COMPLETED', 'SUCCESS'].includes(ref.status)
+                  ? 'badge-success'
+                  : ref.status === 'PROCESSING'
+                  ? 'badge-warning'
+                  : ref.status === 'PENDING'
+                  ? 'badge-gold'
+                  : 'badge-danger';
 
                 return (
                   <tr key={ref._id}>
-                    <td style={{ fontWeight: 700, color: 'var(--color-primary-dark)' }}>
-                      {ref.refundNumber || ref._id}
-                    </td>
-                    <td style={{ fontWeight: 600 }}>
-                      #{orderNum}
+                    <td>
+                      <span className="refund-cell-code" title={refundNum}>
+                        {truncatedRefund}
+                      </span>
                     </td>
                     <td>
-                      <div style={{ fontWeight: 600 }}>{customerName}</div>
-                      {ref.userId?.email && ref.userId?.name && (
-                        <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>
-                          {ref.userId.email}
-                        </div>
-                      )}
+                      <span className="refund-cell-order" title={`#${orderNum}`}>
+                        #{truncatedOrder}
+                      </span>
                     </td>
-                    <td style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-success)' }}>
-                      {formatCurrency(ref.amount)}
+                    <td>
+                      <div className="refund-customer-compact">
+                        <div className="refund-customer-name" title={customerName}>{customerName}</div>
+                        {customerEmail && (
+                          <div className="refund-customer-email" title={customerEmail}>{customerEmail}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <span className="refund-amount-cell">
+                        {formatCurrency(ref.amount)}
+                      </span>
                     </td>
                     <td>
                       <span className="badge badge-gold" style={{ fontSize: '0.7rem' }}>
-                        {ref.method}
+                        {formattedMethod}
                       </span>
-                      {ref.razorpayRefundId && (
-                        <div style={{ fontSize: '0.65rem', color: '#6B7280', fontFamily: 'monospace', marginTop: '2px' }}>
-                          {ref.razorpayRefundId}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ fontSize: '0.85rem', color: '#4B5563', maxWidth: '220px' }}>
-                      {ref.reason}
                     </td>
                     <td>
-                      <div>{formatDate(ref.processedAt || ref.createdAt, true)}</div>
-                      {ref.scheduledAt && (
-                        <div style={{ fontSize: '0.75rem', color: isScheduledFuture ? '#b45309' : '#059669', fontWeight: 500, marginTop: '2px' }}>
-                          Scheduled: {formatDate(ref.scheduledAt, false)}
-                        </div>
-                      )}
+                      <span className="refund-date-cell">
+                        {formatDate(ref.processedAt || ref.createdAt, false)}
+                      </span>
                     </td>
                     <td>
-                      <span
-                        className={`badge ${
-                          ['COMPLETED', 'SUCCESS'].includes(ref.status)
-                            ? 'badge-success'
-                            : ref.status === 'PROCESSING'
-                            ? 'badge-warning'
-                            : 'badge-secondary'
-                        }`}
-                        style={{ fontSize: '0.7rem' }}
-                      >
+                      <span className={`badge ${statusBadgeClass}`} style={{ fontSize: '0.7rem' }}>
                         {ref.status}
                       </span>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <div className="refund-actions-cell">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setDetailRefund(ref)}
+                          style={{ padding: '0.25rem 0.65rem', fontSize: '0.75rem' }}
+                        >
+                          <Eye size={12} />
+                          <span>Details</span>
+                        </Button>
+
                         {ref.status === 'PENDING' && (
                           <Button
                             variant="primary"
@@ -228,7 +249,7 @@ export const AdminRefundsPage = () => {
                             title="Initiate refund processing"
                           >
                             <RefreshCw size={12} />
-                            <span>Initiate Refund</span>
+                            <span>Initiate</span>
                           </Button>
                         )}
 
@@ -254,6 +275,254 @@ export const AdminRefundsPage = () => {
           </table>
         </div>
       )}
+
+      {/* Details Modal */}
+      <Modal
+        isOpen={!!detailRefund}
+        onClose={() => setDetailRefund(null)}
+        title="Refund Details"
+        maxWidth="620px"
+      >
+        {detailRefund && (
+          <div>
+            {/* Modal Hero Header */}
+            <div className="refund-modal-hero">
+              <div>
+                <div style={{ fontSize: '0.725rem', color: 'var(--color-gold-dark)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.2rem' }}>
+                  Reimbursement Amount
+                </div>
+                <div className="refund-modal-amount">
+                  {formatCurrency(detailRefund.amount)}
+                </div>
+                <div className="refund-modal-sub">
+                  Refund #{detailRefund.refundNumber || detailRefund._id}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem' }}>
+                <span
+                  className={`badge ${
+                    ['COMPLETED', 'SUCCESS'].includes(detailRefund.status)
+                      ? 'badge-success'
+                      : detailRefund.status === 'PROCESSING'
+                      ? 'badge-warning'
+                      : detailRefund.status === 'PENDING'
+                      ? 'badge-gold'
+                      : 'badge-danger'
+                  }`}
+                  style={{ fontSize: '0.78rem', padding: '0.35rem 0.85rem' }}
+                >
+                  {detailRefund.status}
+                </span>
+                <span className="badge badge-gold" style={{ fontSize: '0.75rem' }}>
+                  {detailRefund.method === 'RAZORPAY' ? 'Razorpay' : detailRefund.method === 'BANK_TRANSFER' ? 'Bank Transfer' : detailRefund.method === 'UPI' ? 'UPI' : (detailRefund.method || 'N/A')}
+                </span>
+              </div>
+            </div>
+
+            {/* Logical Information Cards Grid */}
+            <div className="refund-details-grid">
+              {/* Refund Information */}
+              <div className="refund-detail-card">
+                <div className="refund-card-title">
+                  <CreditCard size={14} />
+                  <span>Refund Information</span>
+                </div>
+
+                <div className="refund-field-item">
+                  <div className="refund-field-label">Refund Number</div>
+                  <div className="refund-field-value-code">
+                    {detailRefund.refundNumber || detailRefund._id}
+                  </div>
+                </div>
+
+                <div className="refund-field-item">
+                  <div className="refund-field-label">Amount</div>
+                  <div className="refund-field-value" style={{ color: 'var(--color-success)' }}>
+                    {formatCurrency(detailRefund.amount)}
+                  </div>
+                </div>
+
+                <div className="refund-field-item">
+                  <div className="refund-field-label">Status</div>
+                  <div className="refund-field-value">
+                    {detailRefund.status}
+                  </div>
+                </div>
+
+                <div className="refund-field-item">
+                  <div className="refund-field-label">Method</div>
+                  <div className="refund-field-value">
+                    {detailRefund.method || 'N/A'}
+                  </div>
+                </div>
+
+                {detailRefund.reason && (
+                  <div className="refund-field-item">
+                    <div className="refund-field-label">Reason</div>
+                    <div className="refund-field-value" style={{ fontSize: '0.825rem', color: '#4B5563', fontWeight: 500 }}>
+                      {detailRefund.reason}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Order & Payment References */}
+              <div className="refund-detail-card">
+                <div className="refund-card-title">
+                  <FileText size={14} />
+                  <span>Order & Payment Info</span>
+                </div>
+
+                <div className="refund-field-item">
+                  <div className="refund-field-label">Order ID</div>
+                  <div className="refund-field-value-code">
+                    #{detailRefund.orderId?.orderNumber || (typeof detailRefund.orderId === 'string' ? detailRefund.orderId : (detailRefund.orderId?._id || 'N/A'))}
+                  </div>
+                </div>
+
+                {detailRefund.paymentId && (
+                  <div className="refund-field-item">
+                    <div className="refund-field-label">Payment ID</div>
+                    <div className="refund-field-value-code">
+                      {typeof detailRefund.paymentId === 'object' ? (detailRefund.paymentId._id || detailRefund.paymentId.razorpayPaymentId || 'N/A') : detailRefund.paymentId}
+                    </div>
+                  </div>
+                )}
+
+                {detailRefund.returnId && (
+                  <div className="refund-field-item">
+                    <div className="refund-field-label">Return ID</div>
+                    <div className="refund-field-value-code">
+                      {typeof detailRefund.returnId === 'object' ? (detailRefund.returnId.returnNumber || detailRefund.returnId._id) : detailRefund.returnId}
+                    </div>
+                  </div>
+                )}
+
+                {detailRefund.razorpayRefundId && (
+                  <div className="refund-field-item">
+                    <div className="refund-field-label">Razorpay Refund ID</div>
+                    <div className="refund-field-value-code" style={{ backgroundColor: '#FAF5EB', color: 'var(--color-gold-dark)', fontWeight: 700 }}>
+                      {detailRefund.razorpayRefundId}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Customer Info */}
+              <div className="refund-detail-card">
+                <div className="refund-card-title">
+                  <User size={14} />
+                  <span>Customer Information</span>
+                </div>
+
+                <div className="refund-field-item">
+                  <div className="refund-field-label">Customer</div>
+                  <div className="refund-field-value">
+                    {detailRefund.userId?.name || 'Customer'}
+                  </div>
+                </div>
+
+                {detailRefund.userId?.email && (
+                  <div className="refund-field-item">
+                    <div className="refund-field-label">Email</div>
+                    <div className="refund-field-value" style={{ fontSize: '0.825rem' }}>
+                      {detailRefund.userId.email}
+                    </div>
+                  </div>
+                )}
+
+                {detailRefund.userId?.phone && (
+                  <div className="refund-field-item">
+                    <div className="refund-field-label">Phone</div>
+                    <div className="refund-field-value" style={{ fontSize: '0.825rem' }}>
+                      {detailRefund.userId.phone}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Date Information */}
+              <div className="refund-detail-card">
+                <div className="refund-card-title">
+                  <Calendar size={14} />
+                  <span>Date Information</span>
+                </div>
+
+                {detailRefund.createdAt && (
+                  <div className="refund-field-item">
+                    <div className="refund-field-label">Created At</div>
+                    <div className="refund-field-value" style={{ fontSize: '0.825rem' }}>
+                      {formatDate(detailRefund.createdAt, true)}
+                    </div>
+                  </div>
+                )}
+
+                {detailRefund.scheduledAt && (
+                  <div className="refund-field-item">
+                    <div className="refund-field-label">Scheduled At</div>
+                    <div className="refund-field-value" style={{ fontSize: '0.825rem', color: new Date() < new Date(detailRefund.scheduledAt) ? '#b45309' : '#059669' }}>
+                      {formatDate(detailRefund.scheduledAt, true)}
+                    </div>
+                  </div>
+                )}
+
+                {detailRefund.processedAt && (
+                  <div className="refund-field-item">
+                    <div className="refund-field-label">Processed At</div>
+                    <div className="refund-field-value" style={{ fontSize: '0.825rem', color: 'var(--color-success)' }}>
+                      {formatDate(detailRefund.processedAt, true)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Actions Footer */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border-subtle)' }}>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {detailRefund.status === 'PENDING' && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      const targetRef = detailRefund;
+                      setDetailRefund(null);
+                      handleInitiateRefund(targetRef);
+                    }}
+                    loading={initiatingId === detailRefund._id}
+                    style={{ backgroundColor: '#5B1527', borderColor: '#5B1527' }}
+                  >
+                    <RefreshCw size={14} />
+                    <span>Initiate Refund</span>
+                  </Button>
+                )}
+
+                {(detailRefund.status === 'PROCESSING' || (detailRefund.status === 'PENDING' && detailRefund.method === 'BANK_TRANSFER')) && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      const targetRef = detailRefund;
+                      setDetailRefund(null);
+                      handleCompleteRefund(targetRef);
+                    }}
+                    loading={completingId === detailRefund._id}
+                    style={{ backgroundColor: '#059669', borderColor: '#059669' }}
+                  >
+                    <Check size={14} />
+                    <span>Mark Paid</span>
+                  </Button>
+                )}
+              </div>
+
+              <Button variant="secondary" size="sm" onClick={() => setDetailRefund(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* Process Refund Modal */}
       <Modal
@@ -323,4 +592,3 @@ export const AdminRefundsPage = () => {
 };
 
 export default AdminRefundsPage;
-

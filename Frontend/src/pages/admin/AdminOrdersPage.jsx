@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Truck, Edit, Check, Filter, ExternalLink, RefreshCw } from 'lucide-react';
+import { Truck, Edit, Check, RefreshCw, Eye, ShoppingBag, User, FileText } from 'lucide-react';
 import { orderApi } from '../../api/orderApi';
 import { paymentApi } from '../../api/paymentApi';
 import { useToast } from '../../context/ToastContext';
@@ -16,6 +16,9 @@ export const AdminOrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
+
+  // Details Modal
+  const [detailOrder, setDetailOrder] = useState(null);
 
   // Status Update Modal
   const [statusModalOpen, setStatusModalOpen] = useState(false);
@@ -65,6 +68,9 @@ export const AdminOrdersPage = () => {
       await orderApi.updateStatus(selectedOrder._id, newOrderStatus);
       success(`Order #${selectedOrder.orderNumber} status updated to ${newOrderStatus}`);
       setStatusModalOpen(false);
+      if (detailOrder && detailOrder._id === selectedOrder._id) {
+        setDetailOrder({ ...detailOrder, orderStatus: newOrderStatus });
+      }
       loadOrders();
     } catch (err) {
       toastError(err.response?.data?.message || 'Failed to update order status');
@@ -93,6 +99,9 @@ export const AdminOrdersPage = () => {
       await orderApi.updateShipping(selectedOrder._id, shippingForm);
       success(`Shiprocket tracking updated for order #${selectedOrder.orderNumber}`);
       setShippingModalOpen(false);
+      if (detailOrder && detailOrder._id === selectedOrder._id) {
+        setDetailOrder({ ...detailOrder, shipping: { ...shippingForm } });
+      }
       loadOrders();
     } catch (err) {
       toastError(err.response?.data?.message || 'Failed to update shipping details');
@@ -105,6 +114,9 @@ export const AdminOrdersPage = () => {
     try {
       await paymentApi.confirmCodPayment(order._id);
       success(`COD payment confirmed for order #${order.orderNumber}`);
+      if (detailOrder && detailOrder._id === order._id) {
+        setDetailOrder({ ...detailOrder, paymentStatus: 'PAID' });
+      }
       loadOrders();
     } catch (err) {
       toastError(err.response?.data?.message || 'Failed to confirm COD payment');
@@ -152,48 +164,50 @@ export const AdminOrdersPage = () => {
           <p style={{ color: '#6B7280' }}>No orders found matching the filter criteria.</p>
         </div>
       ) : (
-        <div className="admin-table-container">
+        <div className="admin-table-container refund-table-container">
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Order #</th>
-                <th>Customer & Phone</th>
+                <th>Order</th>
+                <th>Customer</th>
                 <th>Items & Total</th>
                 <th>Payment</th>
-                <th>Order Status</th>
-                <th>Shiprocket Courier Info</th>
-                <th>Actions</th>
+                <th>Status</th>
+                <th>Shiprocket Courier</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {orders.map((order) => {
                 const ship = order.shipping || {};
+                const orderNum = order.orderNumber || order._id || '';
+                const customerName = order.userId?.name || order.shippingAddress?.fullName || 'Customer';
+                const customerContact = order.userId?.email || order.shippingAddress?.phone || '';
+
+                const truncatedOrder = orderNum.length > 13 ? `${orderNum.slice(0, 10)}...` : orderNum;
 
                 return (
                   <tr key={order._id}>
                     <td>
-                      <div style={{ fontWeight: 700, color: 'var(--color-primary-dark)' }}>
-                        {order.orderNumber}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>
-                        {formatDate(order.createdAt, true)}
+                      <span className="refund-cell-order" title={`#${orderNum}`}>
+                        #{truncatedOrder}
+                      </span>
+                      <span className="refund-date-cell" style={{ fontSize: '0.75rem', color: '#6B7280' }}>
+                        {formatDate(order.createdAt, false)}
+                      </span>
+                    </td>
+
+                    <td>
+                      <div className="refund-customer-compact">
+                        <div className="refund-customer-name" title={customerName}>{customerName}</div>
+                        {customerContact && (
+                          <div className="refund-customer-email" title={customerContact}>{customerContact}</div>
+                        )}
                       </div>
                     </td>
 
                     <td>
-                      <div style={{ fontWeight: 600 }}>
-                        {order.userId?.name || order.shippingAddress?.fullName || 'Customer'}
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: '#6B7280' }}>
-                        {order.userId?.email || order.shippingAddress?.phone}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
-                        {order.shippingAddress?.city}, {order.shippingAddress?.state}
-                      </div>
-                    </td>
-
-                    <td>
-                      <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-text)' }}>
+                      <div className="refund-amount-cell" style={{ color: 'var(--color-text)' }}>
                         {formatCurrency(order.totalAmount)}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>
@@ -202,7 +216,7 @@ export const AdminOrdersPage = () => {
                     </td>
 
                     <td>
-                      <span className={`badge ${getPaymentStatusBadge(order.paymentStatus)}`}>
+                      <span className={`badge ${getPaymentStatusBadge(order.paymentStatus)}`} style={{ fontSize: '0.7rem' }}>
                         {order.paymentStatus}
                       </span>
                       <div style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '2px' }}>
@@ -211,7 +225,7 @@ export const AdminOrdersPage = () => {
                     </td>
 
                     <td>
-                      <span className={`badge ${getOrderStatusBadge(order.orderStatus)}`}>
+                      <span className={`badge ${getOrderStatusBadge(order.orderStatus)}`} style={{ fontSize: '0.7rem' }}>
                         {order.orderStatus}
                       </span>
                     </td>
@@ -219,15 +233,12 @@ export const AdminOrdersPage = () => {
                     <td>
                       {ship.awbCode ? (
                         <div>
-                          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-primary-dark)' }}>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-primary-dark)' }}>
                             {ship.courierName || 'Shiprocket'}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: '#6B7280', fontFamily: 'monospace' }}>
+                          <div style={{ fontSize: '0.725rem', color: '#6B7280', fontFamily: 'monospace' }}>
                             AWB: {ship.awbCode}
                           </div>
-                          <span className="badge badge-gold" style={{ fontSize: '0.65rem', marginTop: '2px' }}>
-                            {ship.status?.replace(/_/g, ' ')}
-                          </span>
                         </div>
                       ) : (
                         <span style={{ fontSize: '0.8rem', color: '#9CA3AF', fontStyle: 'italic' }}>
@@ -237,25 +248,35 @@ export const AdminOrdersPage = () => {
                     </td>
 
                     <td>
-                      <div style={{ display: 'flex', gap: '0.4rem', flexDirection: 'column' }}>
+                      <div className="refund-actions-cell">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setDetailOrder(order)}
+                          style={{ padding: '0.25rem 0.65rem', fontSize: '0.75rem' }}
+                        >
+                          <Eye size={12} />
+                          <span>Details</span>
+                        </Button>
+
                         <Button
                           variant="secondary"
                           size="sm"
                           onClick={() => handleOpenStatusModal(order)}
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                          title="Update Status"
                         >
                           <Edit size={12} />
-                          <span>Status</span>
                         </Button>
 
                         <Button
                           variant="outline-gold"
                           size="sm"
                           onClick={() => handleOpenShippingModal(order)}
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                          title="Shiprocket Logistics"
                         >
                           <Truck size={12} />
-                          <span>Shiprocket</span>
                         </Button>
 
                         {order.paymentMethod === 'COD' && order.paymentStatus === 'PENDING' && (
@@ -264,10 +285,9 @@ export const AdminOrdersPage = () => {
                             size="sm"
                             onClick={() => handleConfirmCod(order)}
                             style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: '#059669', borderColor: '#059669' }}
-                            title="Confirm cash received from courier"
+                            title="Confirm cash received"
                           >
                             <Check size={12} />
-                            <span>Confirm COD</span>
                           </Button>
                         )}
                       </div>
@@ -279,6 +299,259 @@ export const AdminOrdersPage = () => {
           </table>
         </div>
       )}
+
+      {/* Details Modal */}
+      <Modal
+        isOpen={!!detailOrder}
+        onClose={() => setDetailOrder(null)}
+        title="Order Details"
+        maxWidth="660px"
+      >
+        {detailOrder && (
+          <div>
+            {/* Hero Banner */}
+            <div className="refund-modal-hero">
+              <div>
+                <div style={{ fontSize: '0.725rem', color: 'var(--color-gold-dark)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.2rem' }}>
+                  Total Order Value
+                </div>
+                <div className="refund-modal-amount">
+                  {formatCurrency(detailOrder.totalAmount)}
+                </div>
+                <div className="refund-modal-sub">
+                  Order #{detailOrder.orderNumber}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem' }}>
+                <span className={`badge ${getOrderStatusBadge(detailOrder.orderStatus)}`} style={{ fontSize: '0.78rem', padding: '0.35rem 0.85rem' }}>
+                  Order: {detailOrder.orderStatus}
+                </span>
+                <span className={`badge ${getPaymentStatusBadge(detailOrder.paymentStatus)}`} style={{ fontSize: '0.75rem' }}>
+                  Payment: {detailOrder.paymentStatus} ({detailOrder.paymentMethod})
+                </span>
+              </div>
+            </div>
+
+            {/* Grid Breakdown */}
+            <div className="refund-details-grid">
+              {/* Summary */}
+              <div className="refund-detail-card">
+                <div className="refund-card-title">
+                  <FileText size={14} />
+                  <span>Order Summary</span>
+                </div>
+
+                <div className="refund-field-item">
+                  <div className="refund-field-label">Order Number</div>
+                  <div className="refund-field-value-code">
+                    #{detailOrder.orderNumber}
+                  </div>
+                </div>
+
+                <div className="refund-field-item">
+                  <div className="refund-field-label">Placed At</div>
+                  <div className="refund-field-value" style={{ fontSize: '0.825rem' }}>
+                    {formatDate(detailOrder.createdAt, true)}
+                  </div>
+                </div>
+
+                <div className="refund-field-item">
+                  <div className="refund-field-label">Total Amount</div>
+                  <div className="refund-field-value" style={{ color: 'var(--color-primary-dark)', fontWeight: 700 }}>
+                    {formatCurrency(detailOrder.totalAmount)}
+                  </div>
+                </div>
+
+                <div className="refund-field-item">
+                  <div className="refund-field-label">Payment Mode</div>
+                  <div className="refund-field-value">
+                    {detailOrder.paymentMethod}
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer & Shipping Address */}
+              <div className="refund-detail-card">
+                <div className="refund-card-title">
+                  <User size={14} />
+                  <span>Customer & Shipping Address</span>
+                </div>
+
+                <div className="refund-field-item">
+                  <div className="refund-field-label">Recipient Name</div>
+                  <div className="refund-field-value" style={{ fontWeight: 700, color: 'var(--color-primary-dark)' }}>
+                    {detailOrder.shippingAddress?.fullName || detailOrder.userId?.name || 'Customer'}
+                  </div>
+                </div>
+
+                {(detailOrder.userId?.email || detailOrder.shippingAddress?.email) && (
+                  <div className="refund-field-item">
+                    <div className="refund-field-label">Email</div>
+                    <div className="refund-field-value" style={{ fontSize: '0.825rem' }}>
+                      {detailOrder.userId?.email || detailOrder.shippingAddress?.email}
+                    </div>
+                  </div>
+                )}
+
+                {(detailOrder.shippingAddress?.phone || detailOrder.userId?.phone) && (
+                  <div className="refund-field-item">
+                    <div className="refund-field-label">Phone Contact</div>
+                    <div className="refund-field-value" style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                      {detailOrder.shippingAddress?.phone || detailOrder.userId?.phone}
+                    </div>
+                  </div>
+                )}
+
+                {detailOrder.shippingAddress && (
+                  <div className="refund-field-item">
+                    <div className="refund-field-label">Full Delivery Address (Shiprocket Ready)</div>
+                    <div style={{ backgroundColor: '#FAF5EB', border: '1px solid var(--color-gold-border)', borderRadius: '4px', padding: '0.6rem 0.75rem', fontSize: '0.85rem', color: '#1F2937', lineHeight: 1.5, marginTop: '0.25rem' }}>
+                      <div style={{ fontWeight: 600 }}>
+                        {[
+                          detailOrder.shippingAddress.addressLine1,
+                          detailOrder.shippingAddress.addressLine2,
+                          detailOrder.shippingAddress.street,
+                          detailOrder.shippingAddress.addressLine,
+                          detailOrder.shippingAddress.landmark,
+                        ].filter(Boolean).join(', ') || 'Street address not provided'}
+                      </div>
+                      <div>
+                        {[
+                          detailOrder.shippingAddress.city,
+                          detailOrder.shippingAddress.state,
+                        ].filter(Boolean).join(', ')}
+                        {detailOrder.shippingAddress.pincode ? ` - ${detailOrder.shippingAddress.pincode}` : ''}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '0.15rem' }}>
+                        {detailOrder.shippingAddress.country || 'India'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+
+              {/* Logistics & Shiprocket */}
+              <div className="refund-detail-card" style={{ gridColumn: '1 / -1' }}>
+                <div className="refund-card-title">
+                  <Truck size={14} />
+                  <span>Shiprocket Logistics</span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                  <div className="refund-field-item">
+                    <div className="refund-field-label">Courier Partner</div>
+                    <div className="refund-field-value">
+                      {detailOrder.shipping?.courierName || 'Not Assigned'}
+                    </div>
+                  </div>
+
+                  <div className="refund-field-item">
+                    <div className="refund-field-label">AWB Tracking Code</div>
+                    <div className="refund-field-value-code">
+                      {detailOrder.shipping?.awbCode || 'N/A'}
+                    </div>
+                  </div>
+
+                  <div className="refund-field-item">
+                    <div className="refund-field-label">Shipment Status</div>
+                    <div className="refund-field-value">
+                      <span className="badge badge-gold" style={{ fontSize: '0.7rem' }}>
+                        {detailOrder.shipping?.status?.replace(/_/g, ' ') || 'NOT CREATED'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {detailOrder.shipping?.trackingUrl && (
+                    <div className="refund-field-item">
+                      <div className="refund-field-label">Tracking URL</div>
+                      <a
+                        href={detailOrder.shipping.trackingUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ fontSize: '0.8rem', color: 'var(--color-primary)', fontWeight: 600 }}
+                      >
+                        Open Shiprocket Tracking →
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Ordered Items Table */}
+              <div className="refund-detail-card" style={{ gridColumn: '1 / -1' }}>
+                <div className="refund-card-title">
+                  <ShoppingBag size={14} />
+                  <span>Ordered Saree Items ({detailOrder.items?.length || 0})</span>
+                </div>
+
+                <table className="admin-modal-items-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Qty</th>
+                      <th>Unit Price</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(detailOrder.items || []).map((item, idx) => (
+                      <tr key={idx}>
+                        <td style={{ fontWeight: 600 }}>
+                          {item.title || item.name || item.productId?.title || 'Luxury Saree'}
+                        </td>
+                        <td>{item.quantity}</td>
+                        <td>{formatCurrency(item.price)}</td>
+                        <td style={{ fontWeight: 700 }}>{formatCurrency(item.price * item.quantity)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Modal Actions Footer */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border-subtle)', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleOpenStatusModal(detailOrder)}
+                >
+                  <Edit size={12} />
+                  <span>Update Order Status</span>
+                </Button>
+
+                <Button
+                  variant="outline-gold"
+                  size="sm"
+                  onClick={() => handleOpenShippingModal(detailOrder)}
+                >
+                  <Truck size={12} />
+                  <span>Shiprocket Logistics</span>
+                </Button>
+
+                {detailOrder.paymentMethod === 'COD' && detailOrder.paymentStatus === 'PENDING' && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => handleConfirmCod(detailOrder)}
+                    style={{ backgroundColor: '#059669', borderColor: '#059669' }}
+                  >
+                    <Check size={12} />
+                    <span>Confirm COD Paid</span>
+                  </Button>
+                )}
+              </div>
+
+              <Button variant="secondary" size="sm" onClick={() => setDetailOrder(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* Modal 1: Update Order Lifecycle Status */}
       <Modal

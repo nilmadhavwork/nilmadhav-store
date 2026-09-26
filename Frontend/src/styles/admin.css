@@ -457,3 +457,203 @@
     padding: 0.75rem 1rem;
   }
 }
+
+/* ========================================================
+   REFUND TABLE & DETAILS MODAL STYLING
+   ======================================================== */
+.refund-table-container {
+  overflow-x: auto;
+}
+
+.refund-cell-code {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--color-primary-dark);
+  max-width: 125px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.refund-cell-order {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #1F2937;
+  max-width: 115px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.refund-customer-compact {
+  max-width: 170px;
+  overflow: hidden;
+}
+
+.refund-customer-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.refund-customer-email {
+  font-size: 0.75rem;
+  color: #6B7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.refund-amount-cell {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--color-success);
+  white-space: nowrap;
+}
+
+.refund-date-cell {
+  font-size: 0.85rem;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.refund-actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+}
+
+/* Refund Details Modal Specifics */
+.refund-modal-hero {
+  background: linear-gradient(135deg, #FAF5EB 0%, #F5ECDD 100%);
+  border: 1px solid var(--color-gold-border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.refund-modal-amount {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  line-height: 1.1;
+}
+
+.refund-modal-sub {
+  font-size: 0.825rem;
+  color: #6B7280;
+  margin-top: 0.25rem;
+  font-family: monospace;
+}
+
+.refund-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+}
+
+.refund-detail-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.refund-card-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-primary);
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #F3F4F6;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.refund-field-item {
+  margin-bottom: 0.65rem;
+}
+
+.refund-field-item:last-child {
+  margin-bottom: 0;
+}
+
+.refund-field-label {
+  font-size: 0.725rem;
+  color: #6B7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.refund-field-value {
+  font-size: 0.875rem;
+  color: #111827;
+  font-weight: 600;
+  word-break: break-all;
+  margin-top: 0.1rem;
+}
+
+.refund-field-value-code {
+  font-family: monospace;
+  font-size: 0.825rem;
+  background-color: #F3F4F6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 0.15rem;
+}
+
+@media (max-width: 640px) {
+  .refund-modal-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .refund-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Modal Ordered/Returned Items Table */
+.admin-modal-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.825rem;
+  margin-top: 0.5rem;
+}
+
+.admin-modal-items-table th {
+  background-color: #F9FAFB;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.725rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #4B5563;
+  border-bottom: 1px solid #E5E7EB;
+  text-align: left;
+}
+
+.admin-modal-items-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #F3F4F6;
+  color: #1F2937;
+  vertical-align: middle;
+}
+
+
